@@ -1,0 +1,57 @@
+[project]
+name = "fed-xai"
+version = "0.1.0"
+description = ""
+authors = [{ name = "Martin Georgiu", email = "martin.georgiu@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.10,<4.0.0"
+dependencies = [
+    "flwr[simulation] (>=1.17.0,<2.0.0)",
+    "flwr-datasets (>=0.5.0,<0.6.0)",
+    "xgboost (>=3.0.0,<4.0.0)",
+    "numpy (>=1.26.0,<2.0.0)",
+    "scikit-learn (>=1.6.1,<2.0.0)",
+    "graphviz (>=0.20.3,<0.21.0)",
+    "rulecosi[xgboost] @ git+https://github.com/jobregon1212/rulecosi.git@cd7acee23c9c2f6e7f433aafac7bab446b67f3d2",
+]
+
+[tool.poetry]
+packages = [{ include = "fed_xai", from = "src" }]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.flwr.app]
+publisher = "martingeorgiu"
+
+[tool.flwr.app.components]
+serverapp = "fed_xai.server_app:app"
+clientapp = "fed_xai.client_app:app"
+
+[tool.flwr.app.config]
+# ServerApp
+num-server-rounds = 1
+fraction-fit = 1
+fraction-evaluate = 1
+# fraction-fit = 0.3
+# fraction-evaluate = 0.1
+
+# ClientApp
+local-epochs = 1
+# https://xgboost.readthedocs.io/en/stable/parameter.html
+params.objective = "binary:logistic"
+params.eta = 0.1                     # Learning rate
+params.max-depth = 8
+params.eval-metric = "auc"
+params.nthread = 16
+params.num-parallel-tree = 1
+params.subsample = 1
+params.tree-method = "hist"
+
+[tool.flwr.federations]
+default = "local-simulation"
+
+[tool.flwr.federations.local-simulation]
+options.num-supernodes = 5
