@@ -36,6 +36,7 @@ def server_fn(context: Context):
 
     # Define strategy
     strategy = SaveModelStrategy(
+        shouldSave=False,
         fraction_fit=fraction_fit,
         fraction_evaluate=fraction_evaluate,
         evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation,
