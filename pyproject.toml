@@ -32,14 +32,14 @@ clientapp = "fed_xai.client_app:app"
 
 [tool.flwr.app.config]
 # ServerApp
-num-server-rounds = 1
+num-server-rounds = 10
 fraction-fit = 1
 fraction-evaluate = 1
 # fraction-fit = 0.3
 # fraction-evaluate = 0.1
 
 # ClientApp
-local-epochs = 1
+local-epochs = 5
 # https://xgboost.readthedocs.io/en/stable/parameter.html
 params.objective = "binary:logistic"
 params.eta = 0.1                     # Learning rate

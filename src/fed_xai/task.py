@@ -26,6 +26,17 @@ def train_test_split(partition: Dataset, test_fraction, seed):
     return partition_train, partition_test, num_train, num_test
 
 
+def transform_diabetes_dataset_to_dmatrix(dataset: Dataset):
+    dataset.set_format("numpy")
+    df = dataset.to_pandas()
+
+    X_data = df.drop("Outcome", axis=1)
+    log(INFO, f"X_data: {X_data.shape[0]}")
+    y = df.Outcome
+    new_data = xgb.DMatrix(X_data, label=y)
+    return new_data
+
+
 def transform_lung_dataset_to_dmatrix(dataset: Dataset):
     """Transform dataset to DMatrix format for xgboost."""
     df = dataset.to_pandas()
@@ -59,7 +70,7 @@ def transform_higgs_dataset_to_dmatrix(data):
 
 
 def transform_dataset_to_dmatrix(data):
-    return transform_lung_dataset_to_dmatrix(data)
+    return transform_diabetes_dataset_to_dmatrix(data)
 
 
 fds = None  # Cache FederatedDataset
@@ -71,27 +82,35 @@ def load_data(partition_id, num_clients):
     print("Loading data...")
     global fds
     if fds is None:
-        partitioner = IidPartitioner(num_partitions=num_clients)
+        # partitioner = IidPartitioner(num_partitions=num_clients)
+        # fds = FederatedDataset(
+        #     # dataset="jxie/higgs",
+        #     dataset="virtual10/survey_lung_cancer",
+        #     partitioners={"train": partitioner},
+        # )
         fds = FederatedDataset(
-            # dataset="jxie/higgs",
-            dataset="virtual10/survey_lung_cancer",
-            partitioners={"train": partitioner},
+            dataset="Genius-Society/Pima",
+            partitioners={
+                "train": num_clients,
+                "validation": num_clients,
+                "test": num_clients,
+            },
         )
 
     # Load the partition for this `partition_id`
-    partition = fds.load_partition(partition_id, split="train")
-    log(INFO, f"Loading data for partition {partition_id}...{len(partition)}")
-    partition.set_format("numpy")
-
-    # Train/test splitting
-    train_data, valid_data, num_train, num_val = train_test_split(
-        partition, test_fraction=0.2, seed=42
+    train_partition = fds.load_partition(partition_id, split="train")
+    num_train = len(train_partition)
+    val_partition = fds.load_partition(partition_id, split="validation")
+    num_val = len(val_partition)
+    log(
+        INFO,
+        f"Loading data for partition {partition_id}...num train: {num_train}...num val: {num_val}",
     )
 
     # Reformat data to DMatrix for xgboost
     log(INFO, "Reformatting data...")
-    train_dmatrix = transform_dataset_to_dmatrix(train_data)
-    valid_dmatrix = transform_dataset_to_dmatrix(valid_data)
+    train_dmatrix = transform_dataset_to_dmatrix(train_partition)
+    valid_dmatrix = transform_dataset_to_dmatrix(val_partition)
 
     return train_dmatrix, valid_dmatrix, num_train, num_val
 

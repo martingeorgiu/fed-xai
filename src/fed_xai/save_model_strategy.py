@@ -9,6 +9,9 @@ from flwr.server.strategy import FedXgbBagging
 
 
 class SaveModelStrategy(FedXgbBagging):
+    def __init__(self, shouldSave: bool):
+        self.shouldSave = shouldSave
+
     def aggregate_fit(
         self,
         server_round: int,
@@ -21,6 +24,7 @@ class SaveModelStrategy(FedXgbBagging):
             failures=failures,
         )
         bytes_model = res[0].tensors[0]
-        with open(f"output/output{server_round}.bin", "wb") as file:
-            file.write(bytes_model)
+        if self.shouldSave:
+            with open(f"output/output{server_round}.bin", "wb") as file:
+                file.write(bytes_model)
         return res

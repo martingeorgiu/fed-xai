@@ -1,6 +1,7 @@
 import warnings
 
 import numpy as np
+import pandas as pd
 import xgboost as xgb
 from flwr.client import Client, ClientApp
 from flwr.common import (
@@ -14,6 +15,7 @@ from flwr.common import (
 )
 from flwr.common.config import unflatten_dict
 from flwr.common.context import Context
+from flwr_datasets import FederatedDataset
 from matplotlib import pyplot as plt
 from pandas import Series
 from rulecosi import RuleCOSIClassifier, RuleSet
@@ -24,64 +26,53 @@ from fed_xai.xgb_classifier import XGBClassifierExtractorForDebug
 
 # from fed_xai.xgb_classifier import XGBClassifierExtractor
 
-if __name__ == "__main__":
-    with open("output/output1.bin", "rb") as file:
+
+def generate_viz(bst: xgb.Booster):
+    fig, ax = plt.subplots(figsize=(30, 30))
+    xgb.plot_tree(bst, ax=ax, tree_idx=1)
+    print(xgb.build_info())
+    print(xgb.config.get_config())
+    # Save tree visualization
+    plt.savefig("output/tree.pdf")
+
+    # Create feature importance plot
+    fig_importance, ax_importance = plt.subplots(figsize=(10, 10))
+    xgb.plot_importance(bst, ax=ax_importance)
+    plt.savefig("output/importance.pdf")
+    bst.dump_model("output/dump.json")
+
+
+# def generate_rules(bst: xgb.Booster):
+#     print(f"Feature names: {bst.feature_names}")
+#     dump_list = bst.get_dump(dump_format="json")
+#     num_trees = len(dump_list)
+
+#     xgb_classifier = xgb.XGBClassifier()
+#     xgb_classifier._Booster = bst
+#     xgb_classifier.n_estimators = num_trees
+
+#     train_data, num_train, _, __ = load_data(0, num_clients=1)
+
+#     y = train_data.get_label()
+#     X = pd.DataFrame(train_data.get_data().toarray())
+
+#     classifier = RuleCOSIClassifierDebug(
+#         xgb_classifier, column_names=Series(bst.feature_names)
+#     )
+#     classifier.fit(X, y, np.array(bst.feature_names))
+#     classifier.simplified_ruleset_.print_rules(heuristics_digits=4, condition_digits=1)
+
+
+def main():
+    with open("output/output4.bin", "rb") as file:
         data = file.read()
     bst = xgb.Booster(params={"objective": "binary:logistic"})
     para_b = bytearray(data)
     bst.load_model(para_b)
 
-    # fig, ax = plt.subplots(figsize=(30, 30))
-    # xgb.plot_tree(bst, ax=ax, tree_idx=1)
-    # print(xgb.build_info())
-    # print(xgb.config.get_config())
-    # # Save tree visualization
-    # plt.savefig("output/plt/tree.pdf")
+    # generate_viz(bst)
+    # generate_rules(bst)
 
-    # Create feature importance plot
-    # fig_importance, ax_importance = plt.subplots(figsize=(10, 10))
-    # xgb.plot_importance(bst, ax=ax_importance)
-    # plt.savefig("output/plt/importance.pdf")
-    # bst.dump_model("output/plt/dump.json")
 
-    # rc = RuleCOSIClassifier(base_ensemble=bst,
-    #     metric='f1',n_estimators=100, tree_max_depth=3,
-    #     conf_threshold=0.9, cov_threshold=0.0,
-    #     random_state=1212, column_names=X_train.columns)
-    # rc.fit
-    print(f"Feature names: {bst.feature_names}")
-    dump_list = bst.get_dump(dump_format="json")
-    num_trees = len(dump_list)
-
-    xgb_classifier = xgb.XGBClassifier()
-    xgb_classifier._Booster = bst
-    xgb_classifier.n_estimators = num_trees
-
-    print(f"Number of trees: {num_trees}")
-    print(f"Number of estimators: {xgb_classifier.n_estimators}")
-
-    classifier = RuleCOSIClassifier(xgb_classifier)
-    classifier
-    # classifier.fit(None, None)
-    # extractor = XGBClassifierExtractor(
-    extractor = XGBClassifierExtractorForDebug(
-        xgb_classifier,
-        Series(bst.feature_names),
-        np.array(bst.feature_names),
-        None,
-        None,
-        -1e-6,
-    )
-    rules = extractor.extract_rules()
-    print(rules)
-
-    # rule_extractor = XGBClassifierExtractor(
-    #     bst,
-    #     bst.feature_names,
-    #     bst.feature_names,
-    #     None,
-    #     None,
-    #     1e-6,
-    # )
-    # rules = rule_extractor.extract_rules()
-    # print(rules)
+if __name__ == "__main__":
+    main()

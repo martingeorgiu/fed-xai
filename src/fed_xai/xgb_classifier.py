@@ -2,112 +2,13 @@ import json
 import operator
 
 import numpy as np
+import xgboost as xgb
+from pandas import Series
 from rulecosi import RuleSet
 from rulecosi.rule_extraction import GBMClassifierRuleExtractor
 from rulecosi.rule_heuristics import RuleHeuristics
-def calc_rules(original_rulesets):
-     processed_rulesets = np.copy.deepcopy(original_rulesets)
 
-        # We create the heuristics object which will compute all the
-        # heuristics related measures
-        self._rule_heuristics = RuleHeuristics(X=self.X_, y=self.y_,
-                                               classes_=self.classes_,
-                                               condition_map=
-                                               self._global_condition_map,
-                                               cov_threshold=self.cov_threshold,
-                                               conf_threshold=
-                                               self.conf_threshold)
-        if self.verbose > 0:
-            print(f'Initializing sets and computing condition map...')
-        self._initialize_sets()
 
-        if str(
-                self.base_ensemble_.__class__) == \
-                "<class 'catboost.core.CatBoostClassifier'>":
-            for ruleset in processed_rulesets:
-                for rule in ruleset:
-                    new_A = self._remove_opposite_conditions(set(rule.A),
-                                                             rule.class_index)
-                    rule.A = new_A
-
-        for ruleset in processed_rulesets:
-            self._rule_heuristics.compute_rule_heuristics(
-                ruleset, recompute=True)
-        self.simplified_ruleset_ = processed_rulesets[0]
-
-        self._simplify_rulesets(
-            self.simplified_ruleset_)
-        y_pred = self._add_default_rule(self.simplified_ruleset_)
-        self.simplified_ruleset_.compute_class_perf_fast(y_pred,
-                                                         self.y_,
-                                                         self.metric)
-        self.simplified_ruleset_.rules.pop()
-
-        self.n_combinations_ = 0
-
-        self._early_stop_cnt = 0
-        if self.early_stop > 0:
-            early_stop = int(len(processed_rulesets) * self.early_stop)
-        else:
-            early_stop = len(processed_rulesets)
-
-        if self.verbose > 0:
-            print(f'Start combination process...')
-            if self.verbose > 1:
-                print(
-                    f'Iteration {0}, Rule size: '
-                    f'{len(self.simplified_ruleset_.rules)}, '
-                    f'{self.metric}: '
-                    f'{self.simplified_ruleset_.metric(self.metric)}')
-        for i in range(1, len(processed_rulesets)):
-            # combine the rules
-            combined_rules = self._combine_rulesets(self.simplified_ruleset_,
-                                                    processed_rulesets[i])
-
-            if self.verbose > 1:
-                print(f'Iteration{i}:')
-                print(
-                    f'\tCombined rules size: {len(combined_rules.rules)} rules')
-            # prune inaccurate rules
-            self._sequential_covering_pruning(combined_rules)
-            if self.verbose > 1:
-                print(
-                    f'\tSequential covering pruned rules size: '
-                    f'{len(combined_rules.rules)} rules')
-            # simplify rules
-            self._simplify_rulesets(combined_rules)
-            if self.verbose > 1:
-                print(
-                    f'\tSimplified rules size: '
-                    f'{len(combined_rules.rules)} rules')
-
-            # skip if the combined rules are empty
-            if len(combined_rules.rules) == 0:
-                if self.verbose > 1:
-                    print(f'\tCombined rules are empty, skipping iteration.')
-                continue
-            self.simplified_ruleset_, best_ruleset = self._evaluate_combinations(
-                self.simplified_ruleset_, combined_rules)
-
-            if self._early_stop_cnt >= early_stop:
-                break
-            if self.simplified_ruleset_.metric() == 1:
-                break
-
-        self.simplified_ruleset_.rules[:] = [rule for rule in
-                                             self.simplified_ruleset_.rules
-                                             if rule.cov > 0]
-        if self.verbose > 0:
-            print(f'Finish combination process, adding default rule...')
-
-        _ = self._add_default_rule(self.simplified_ruleset_)
-        self.simplified_ruleset_.prune_condition_map()
-        end_time = time.time()
-        self.combination_time_ = end_time - start_time
-        if self.verbose > 0:
-            print(
-                f'R size: {len(self.simplified_ruleset_.rules)}, {self.metric}:'
-                f' {self.simplified_ruleset_.metric(self.metric)}')
 class XGBClassifierExtractorForDebug(GBMClassifierRuleExtractor):
     """Rule extraction for a Gradient Boosting Tree ensemble classifier.
     This class accept only XGB implementation
