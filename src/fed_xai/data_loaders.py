@@ -77,9 +77,8 @@ fds = None  # Cache FederatedDataset
 
 
 def load_data(partition_id, num_clients):
-    """Load partition HIGGS data."""
-    # Only initialize `FederatedDataset` once
     print("Loading data...")
+    # Only initialize `FederatedDataset` once
     global fds
     if fds is None:
         # partitioner = IidPartitioner(num_partitions=num_clients)

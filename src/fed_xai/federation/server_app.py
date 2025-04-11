@@ -4,7 +4,7 @@ from flwr.common import Context, Parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedXgbBagging
 
-from fed_xai.save_model_strategy import SaveModelStrategy
+from fed_xai.federation.save_model_strategy import SaveModelStrategy
 
 
 def evaluate_metrics_aggregation(eval_metrics):

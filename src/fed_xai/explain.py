@@ -21,8 +21,10 @@ from pandas import Series
 from rulecosi import RuleCOSIClassifier, RuleSet
 from rulecosi.rule_extraction import XGBClassifierExtractor
 
-from fed_xai.task import load_data, replace_keys
-from fed_xai.xgb_classifier import XGBClassifierExtractorForDebug
+from fed_xai.data_loaders import load_data, replace_keys
+from fed_xai.explainers.bellatrex_explainer import bellatrex_explainer
+from fed_xai.explainers.shap_explainer import shap_explainer
+from fed_xai.explainers.rulecosi_explainer import XGBClassifierExtractorForDebug
 
 # from fed_xai.xgb_classifier import XGBClassifierExtractor
 
@@ -72,6 +74,8 @@ def main():
 
     # generate_viz(bst)
     # generate_rules(bst)
+    # shap_explainer(bst)
+    bellatrex_explainer(bst)
 
 
 if __name__ == "__main__":
