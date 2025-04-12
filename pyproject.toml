@@ -15,6 +15,9 @@ dependencies = [
     "rulecosi[xgboost] @ git+https://github.com/jobregon1212/rulecosi.git@cd7acee23c9c2f6e7f433aafac7bab446b67f3d2",
     "shap (>=0.47.1,<0.48.0)",
     "bellatrex[gui] (>=0.2.3,<0.3.0)",
+    "hyperopt (>=0.2.7,<0.3.0)",
+    "setuptools (>=78.1.0,<79.0.0)",
+    "imbalanced-learn (>=0.13.0,<0.14.0)",
 ]
 
 [tool.poetry]

@@ -21,10 +21,10 @@ from pandas import Series
 from rulecosi import RuleCOSIClassifier, RuleSet
 from rulecosi.rule_extraction import XGBClassifierExtractor
 
-from fed_xai.data_loaders import load_data, replace_keys
+from fed_xai.data_loaders.loader import load_data, replace_keys
 from fed_xai.explainers.bellatrex_explainer import bellatrex_explainer
-from fed_xai.explainers.shap_explainer import shap_explainer
 from fed_xai.explainers.rulecosi_explainer import XGBClassifierExtractorForDebug
+from fed_xai.explainers.shap_explainer import shap_explainer
 
 # from fed_xai.xgb_classifier import XGBClassifierExtractor
 

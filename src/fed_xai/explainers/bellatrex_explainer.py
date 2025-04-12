@@ -6,12 +6,13 @@ from matplotlib import pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import Booster
 
-from fed_xai.data_loaders import load_data
+from fed_xai.data_loaders.loader import load_data
 
 
 def bellatrex_explainer(model: RandomForestClassifier):
-    train_dmatrix, valid_dmatrix, num_train, num_val = load_data(0, 1)
-    df_valid = pd.DataFrame(valid_dmatrix.get_data().toarray())
+
+    # DATA USED for explanation
+    X_train, X_test, y_train, y_test = load_data(0, 1)
 
     # Pretrained RF model should be packed as a list of dicts with the function below.
     clf_packed = pack_trained_ensemble(model)
@@ -20,10 +21,10 @@ def bellatrex_explainer(model: RandomForestClassifier):
     )
     btrex_fitted = btrex_fitted.fit(None, None)
     y_train_pred = predict_helper(
-        model, train_dmatrix.get_data()
+        model, X_train
     )  # calls, predict or predict_proba, depending on the underlying model
 
-    tuned_method = btrex_fitted.explain(df_valid, 0)
+    tuned_method = btrex_fitted.explain(X_test, 3)
 
     tuned_method.plot_overview(plot_gui=False, show=True)
 

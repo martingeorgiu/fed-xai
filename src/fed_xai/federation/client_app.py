@@ -14,7 +14,7 @@ from flwr.common import (
 from flwr.common.config import unflatten_dict
 from flwr.common.context import Context
 
-from fed_xai.data_loaders import load_data, replace_keys
+from fed_xai.data_loaders.loader import load_data, load_data_for_xgb, replace_keys
 
 
 class FlowerClient(Client):
@@ -109,7 +109,7 @@ def client_fn(context: Context):
     # Load model and data
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
-    train_dmatrix, valid_dmatrix, num_train, num_val = load_data(
+    train_dmatrix, valid_dmatrix, num_train, num_val = load_data_for_xgb(
         partition_id, num_partitions
     )
 

@@ -4,9 +4,54 @@ import operator
 import numpy as np
 import xgboost as xgb
 from pandas import Series
-from rulecosi import RuleSet
+from rulecosi import RuleCOSIClassifier, RuleSet
 from rulecosi.rule_extraction import GBMClassifierRuleExtractor
 from rulecosi.rule_heuristics import RuleHeuristics
+from sklearn.metrics import classification_report
+
+from fed_xai.data_loaders.loader import load_data_with_smote
+
+
+def rulecosi_explainer(clf: xgb.XGBClassifier):
+    X_train, X_test, y_train, y_test = load_data_with_smote(0, 1)
+
+    rc = RuleCOSIClassifier(
+        base_ensemble=clf,
+        metric="f1",
+        # n_estimators=100,
+        # tree_max_depth=3,
+        # conf_threshold=0.9,
+        # cov_threshold=0.0,
+        random_state=0,
+        column_names=X_train.columns,
+    )
+    rc.fit(X_train, y_train)
+
+    print(f"== Original XGBoost ensemble ==")
+    print(f"Number of trees: {rc.base_ensemble_.n_estimators} trees")
+    print(f"Number of rules: {get_n_rules(rc.original_rulesets_)} rules\n")
+
+    print(f"== Simplified rules ==")
+    rc.simplified_ruleset_.print_rules()
+
+    y_pred = rc.predict(X_test)
+    y_pred_ens = rc.base_ensemble_.predict(X_test, validate_features=False)
+
+    print("Combinations: {}".format(rc.n_combinations_))
+    print("Time: {}\n".format(rc.combination_time_))
+    print(f"====== Classification performance of XGBoost ======")
+    print(classification_report(y_test, y_pred_ens, digits=4))
+    print(f"\n====== Classification performance of simplified rules ======")
+    print(classification_report(y_test, y_pred, digits=4))
+    print("\n")
+
+
+def get_n_rules(rulesets):
+    n_rules = 0
+    for ruleset in rulesets:
+        for rule in ruleset:
+            n_rules += 1
+    return n_rules
 
 
 class XGBClassifierExtractorForDebug(GBMClassifierRuleExtractor):

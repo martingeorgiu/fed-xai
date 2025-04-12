@@ -24,7 +24,7 @@ from sklearn.metrics import (
     recall_score,
 )
 
-from fed_xai.data_loaders import load_data, replace_keys
+from fed_xai.data_loaders.loader import load_data, replace_keys
 
 
 def get_params(model: RandomForestClassifier) -> List[np.ndarray]:
