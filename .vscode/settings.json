@@ -5,6 +5,4 @@
     
     },
     "ruff.nativeServer": "on",
-    "mypy-type-checker.reportingScope": "workspace",
-
 }
