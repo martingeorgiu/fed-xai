@@ -1,18 +1,19 @@
-from typing import Tuple
+from typing import Any
 
-from matplotlib import pyplot as plt
+from pandas import DataFrame, Series
 from sklearn.metrics import accuracy_score
-from xgboost import XGBClassifier, plot_importance
+from xgboost import XGBClassifier
 
 from fed_xai.data_loaders.loader import load_data_with_smote
-from fed_xai.explainers.rulecosi_explainer import rulecosi_explainer
-from fed_xai.explainers.shap_explainer import shap_explainer
 
 
 def objective_train_xgboost(
-    space, X_train, y_train, X_test, y_test
-) -> Tuple[XGBClassifier, float]:
-
+    space: dict[str, Any],
+    X_train: DataFrame,
+    X_test: DataFrame,
+    y_train: Series,
+    y_test: Series,
+) -> tuple[XGBClassifier, float]:
     clf = XGBClassifier(
         max_depth=int(space["max_depth"]),
         gamma=space["gamma"],
@@ -22,6 +23,7 @@ def objective_train_xgboost(
         colsample_bytree=space["colsample_bytree"],
         min_child_weight=space["min_child_weight"],
         n_estimators=int(space["n_estimators"]),
+        tree_method="hist",
         eval_metric="auc",
         early_stopping_rounds=10,
     )
@@ -44,24 +46,25 @@ def objective_train_xgboost(
     return (clf, accuracy)
 
 
+# The best hyperparameters found by hyperopt
 selected_space = {
     "colsample_bytree": 0.6430856119765089,
     "gamma": 11.131971049496897,
     "learning_rate": 0.13217260031428005,
-    "max_depth": 12.0,
+    "max_depth": 12,
     "min_child_weight": 1.1822174379587778,
-    "n_estimators": 62.0,
+    "n_estimators": 62,
     "reg_alpha": 8.701579711100049,
     "reg_lambda": 0.3148826988724287,
 }
 
 
-def main():
+def main() -> None:
     X_train, X_test, y_train, y_test = load_data_with_smote(0, 1)
-    clf, acc = objective_train_xgboost(selected_space, X_train, y_train, X_test, y_test)
-    bst = clf.get_booster()
+    clf, acc = objective_train_xgboost(selected_space, X_train, X_test, y_train, y_test)
+    bst = clf.get_booster()  # noqa: F841
 
-    shap_explainer(bst)
+    # shap_explainer(bst)
 
     # plot_importance(bst)
     # plt.show()

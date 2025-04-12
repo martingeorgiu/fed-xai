@@ -1,4 +1,4 @@
-from collections import Counter
+from typing import Any
 
 from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 
@@ -20,11 +20,11 @@ space = {
 }
 
 
-def main():
+def main() -> None:
     X_train, X_test, y_train, y_test = load_data_with_smote(0, 1)
 
-    def objective(space):
-        clf, accuracy = objective_train_xgboost(space, X_train, y_train, X_test, y_test)
+    def objective(space: dict[str, Any]) -> dict[str, Any]:
+        clf, accuracy = objective_train_xgboost(space, X_train, X_test, y_train, y_test)
         return {"loss": -accuracy, "status": STATUS_OK}
 
     trials = Trials()

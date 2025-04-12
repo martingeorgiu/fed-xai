@@ -1,23 +1,13 @@
-import warnings
-
 import xgboost as xgb
-from flwr.client import Client, ClientApp
-from flwr.common import (
-    Code,
-    EvaluateIns,
-    EvaluateRes,
-    FitIns,
-    FitRes,
-    Parameters,
-    Status,
-)
-from flwr.common.config import unflatten_dict
+from flwr.client import Client
+from flwr.common import Code, EvaluateIns, EvaluateRes, FitIns, FitRes, Parameters, Status
 from flwr.common.context import Context
 
-from fed_xai.data_loaders.loader import load_data, load_data_for_xgb, replace_keys
+from fed_xai.data_loaders.loader import load_data_for_xgb
+from fed_xai.xgboost.train_xgboost import selected_space
 
 
-class FlowerClient(Client):
+class XGBFlowerClient(Client):
     def __init__(
         self,
         train_dmatrix,
@@ -34,15 +24,14 @@ class FlowerClient(Client):
         self.num_local_round = num_local_round
         self.params = params
 
-    def _local_boost(self, bst_input):
+    def _local_boost(self, bst_input: xgb.Booster):
         # Update trees based on local training data.
-        for i in range(self.num_local_round):
+        for _ in range(self.num_local_round):
             bst_input.update(self.train_dmatrix, bst_input.num_boosted_rounds())
 
         # Bagging: extract the last N=num_local_round trees for sever aggregation
         bst = bst_input[
-            bst_input.num_boosted_rounds()
-            - self.num_local_round : bst_input.num_boosted_rounds()
+            bst_input.num_boosted_rounds() - self.num_local_round : bst_input.num_boosted_rounds()
         ]
 
         return bst
@@ -105,27 +94,28 @@ class FlowerClient(Client):
         )
 
 
-def client_fn(context: Context):
+def xgb_client_fn(context: Context):
     # Load model and data
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
+    if not isinstance(partition_id, int) or not isinstance(num_partitions, int):
+        raise TypeError("partition_id and num_partitions must be integers")
     train_dmatrix, valid_dmatrix, num_train, num_val = load_data_for_xgb(
-        partition_id, num_partitions
+        partition_id, num_partitions, smote=True
     )
 
-    cfg = replace_keys(unflatten_dict(context.run_config))
-    num_local_round = cfg["local_epochs"]
+    num_local_round = 2
 
-    return FlowerClient(
+    return XGBFlowerClient(
         train_dmatrix,
         valid_dmatrix,
         num_train,
         num_val,
         num_local_round,
-        cfg["params"],
+        selected_space
+        | {
+            "objective": "binary:logistic",
+            "tree_method": "hist",
+            "eval_metric": "auc",
+        },
     )
-
-
-app = ClientApp(
-    client_fn,
-)

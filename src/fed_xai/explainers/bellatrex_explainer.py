@@ -1,16 +1,13 @@
-import pandas as pd
 from bellatrex import BellatrexExplain
 from bellatrex.utilities import predict_helper
 from bellatrex.wrapper_class import pack_trained_ensemble
 from matplotlib import pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
-from xgboost import Booster
 
 from fed_xai.data_loaders.loader import load_data
 
 
-def bellatrex_explainer(model: RandomForestClassifier):
-
+def bellatrex_explainer(model: RandomForestClassifier) -> None:
     # DATA USED for explanation
     X_train, X_test, y_train, y_test = load_data(0, 1)
 

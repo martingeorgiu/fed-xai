@@ -1,23 +1,18 @@
-from typing import Dict
-
 from flwr.common import Context, Parameters
-from flwr.server import ServerApp, ServerAppComponents, ServerConfig
-from flwr.server.strategy import FedXgbBagging
+from flwr.server import ServerAppComponents, ServerConfig
 
-from fed_xai.federation.save_model_strategy import SaveModelStrategy
+from fed_xai.federation.xgboost.xgb_save_model_strategy import XGBSaveModelStrategy
 
 
 def evaluate_metrics_aggregation(eval_metrics):
     """Return an aggregated metric (AUC) for evaluation."""
     total_num = sum([num for num, _ in eval_metrics])
-    auc_aggregated = (
-        sum([metrics["AUC"] * num for num, metrics in eval_metrics]) / total_num
-    )
+    auc_aggregated = sum([metrics["AUC"] * num for num, metrics in eval_metrics]) / total_num
     metrics_aggregated = {"AUC": auc_aggregated}
     return metrics_aggregated
 
 
-def config_func(rnd: int) -> Dict[str, str]:
+def config_func(rnd: int) -> dict[str, str]:
     """Return a configuration with global epochs."""
     config = {
         "global_round": str(rnd),
@@ -25,17 +20,17 @@ def config_func(rnd: int) -> Dict[str, str]:
     return config
 
 
-def server_fn(context: Context):
+def xgb_server_fn(context: Context):
     # Read from config
-    num_rounds = context.run_config["num-server-rounds"]
-    fraction_fit = context.run_config["fraction-fit"]
-    fraction_evaluate = context.run_config["fraction-evaluate"]
+    num_rounds = 10
+    fraction_fit = 1.0
+    fraction_evaluate = 1.0
 
     # Init an empty Parameter
     parameters = Parameters(tensor_type="", tensors=[])
 
     # Define strategy
-    strategy = SaveModelStrategy(
+    strategy = XGBSaveModelStrategy(
         shouldSave=False,
         fraction_fit=fraction_fit,
         fraction_evaluate=fraction_evaluate,
@@ -47,9 +42,3 @@ def server_fn(context: Context):
     config = ServerConfig(num_rounds=num_rounds)
 
     return ServerAppComponents(strategy=strategy, config=config)
-
-
-# Create ServerApp
-app = ServerApp(
-    server_fn=server_fn,
-)

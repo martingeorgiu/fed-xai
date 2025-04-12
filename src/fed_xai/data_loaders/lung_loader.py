@@ -1,23 +1,21 @@
 import warnings
 from logging import INFO
 
-import numpy as np
+import pandas as pd
 import xgboost as xgb
 from datasets import Dataset
 from flwr.common import log
-from flwr_datasets import FederatedDataset
-from flwr_datasets.partitioner import IidPartitioner
 from sklearn.preprocessing import LabelEncoder
 
-warnings.filterwarnings(
-    "ignore", category=UserWarning, message="The currently tested dataset are"
-)
+warnings.filterwarnings("ignore", category=UserWarning, message="The currently tested dataset are")
 
 
-def transform_lung_dataset_to_dmatrix(dataset: Dataset):
+def transform_lung_dataset_to_dmatrix(dataset: Dataset) -> xgb.DMatrix:
     """Transform dataset to DMatrix format for xgboost."""
     df = dataset.to_pandas()
-    # TODO: Duplicate can still occour across partitions and accross train and test!
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("Expected a pandas DataFrame for 'df'.")
+
     df = df.drop_duplicates(ignore_index=True)
     log(INFO, f"Data shape: {df}")
     encoder = LabelEncoder()

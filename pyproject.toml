@@ -18,47 +18,46 @@ dependencies = [
     "hyperopt (>=0.2.7,<0.3.0)",
     "setuptools (>=78.1.0,<79.0.0)",
     "imbalanced-learn (>=0.13.0,<0.14.0)",
+    "datasets (>=2.14.6,<=3.1.0)",
 ]
 
 [tool.poetry]
 packages = [{ include = "fed_xai", from = "src" }]
 
 
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11.5"
+mypy = "^1.15.0"
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.flwr.app]
-publisher = "martingeorgiu"
+[tool.ruff]
+line-length = 100
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    # type annotation rules
+    "ANN",
+]
 
-[tool.flwr.app.components]
-serverapp = "fed_xai.federation.random_forest.rf_server_app:app"
-clientapp = "fed_xai.federation.random_forest.rf_client_app:app"
-# serverapp = "fed_xai.federation.server_app:app"
-# clientapp = "fed_xai.federation.client_app:app"
+[tool.ruff.lint]
+extend-select = ["E501"]
 
-[tool.flwr.app.config]
-# ServerApp
-num-server-rounds = 10
-fraction-fit = 1
-fraction-evaluate = 1
-# fraction-fit = 0.3
-# fraction-evaluate = 0.1
+[tool.mypy]
+follow_untyped_imports = true
 
-# ClientApp
-local-epochs = 5
-# https://xgboost.readthedocs.io/en/stable/parameter.html
-params.objective = "binary:logistic"
-params.eta = 0.1                     # Learning rate
-params.max-depth = 8
-params.eval-metric = "auc"
-params.nthread = 16
-params.num-parallel-tree = 1
-params.subsample = 1
-params.tree-method = "hist"
 
-[tool.flwr.federations]
-default = "local-simulation"
-
-[tool.flwr.federations.local-simulation]
-options.num-supernodes = 5
+# [[tool.mypy.overrides]]
+# module = ["*.*"]
