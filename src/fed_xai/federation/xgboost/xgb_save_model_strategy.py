@@ -4,7 +4,7 @@ from flwr.server.strategy import FedXgbBagging
 
 
 class XGBSaveModelStrategy(FedXgbBagging):
-    def __init__(self, shouldSave: bool, *args, **kwargs):
+    def __init__(self, shouldSave: bool, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.shouldSave = shouldSave
 

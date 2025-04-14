@@ -1,6 +1,6 @@
 import xgboost as xgb
 from rulecosi import RuleCOSIClassifier, RuleSet
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, roc_auc_score
 
 from fed_xai.data_loaders.loader import load_data_with_smote
 
@@ -34,8 +34,10 @@ def rulecosi_explainer(clf: xgb.XGBClassifier) -> None:
     print(f"Time: {rc.combination_time_}\n")
     print("====== Classification performance of XGBoost ======")
     print(classification_report(y_test, y_pred_ens, digits=4))
+    print(roc_auc_score(y_test, y_pred_ens))
     print("\n====== Classification performance of simplified rules ======")
     print(classification_report(y_test, y_pred, digits=4))
+    print(roc_auc_score(y_test, y_pred))
     print("\n")
 
 

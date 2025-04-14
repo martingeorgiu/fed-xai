@@ -1,22 +1,32 @@
+from typing import Any
+
 import xgboost as xgb
 from flwr.client import Client
 from flwr.common import Code, EvaluateIns, EvaluateRes, FitIns, FitRes, Parameters, Status
 from flwr.common.context import Context
+from sklearn.metrics import accuracy_score  # noqa: F401
 
 from fed_xai.data_loaders.loader import load_data_for_xgb
+from fed_xai.helpers.accuracy_score_with_threshold import accuracy_score_with_threshold
 from fed_xai.xgboost.train_xgboost import selected_space
+
+booster_params_from_hp = selected_space | {
+    "objective": "binary:logistic",
+    "tree_method": "hist",
+    "eval_metric": "auc",
+}
 
 
 class XGBFlowerClient(Client):
     def __init__(
         self,
-        train_dmatrix,
-        valid_dmatrix,
-        num_train,
-        num_val,
-        num_local_round,
-        params,
-    ):
+        train_dmatrix: xgb.DMatrix,
+        valid_dmatrix: xgb.DMatrix,
+        num_train: int,
+        num_val: int,
+        num_local_round: int,
+        params: dict[str, Any],
+    ) -> None:
         self.train_dmatrix = train_dmatrix
         self.valid_dmatrix = valid_dmatrix
         self.num_train = num_train
@@ -24,7 +34,7 @@ class XGBFlowerClient(Client):
         self.num_local_round = num_local_round
         self.params = params
 
-    def _local_boost(self, bst_input: xgb.Booster):
+    def _local_boost(self, bst_input: xgb.Booster) -> xgb.Booster:
         # Update trees based on local training data.
         for _ in range(self.num_local_round):
             bst_input.update(self.train_dmatrix, bst_input.num_boosted_rounds())
@@ -76,6 +86,10 @@ class XGBFlowerClient(Client):
         para_b = bytearray(ins.parameters.tensors[0])
         bst.load_model(para_b)
 
+        y_pred = bst.predict(self.valid_dmatrix, validate_features=False)
+        y_true = self.valid_dmatrix.get_label()
+
+        acc = accuracy_score_with_threshold(y_true, y_pred)
         # Run evaluation
         eval_results = bst.eval_set(
             evals=[(self.valid_dmatrix, "valid")],
@@ -90,11 +104,11 @@ class XGBFlowerClient(Client):
             ),
             loss=0.0,
             num_examples=self.num_val,
-            metrics={"AUC": auc},
+            metrics={"acc": acc, "auc": auc},
         )
 
 
-def xgb_client_fn(context: Context):
+def xgb_client_fn(context: Context) -> XGBFlowerClient:
     # Load model and data
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
@@ -104,7 +118,7 @@ def xgb_client_fn(context: Context):
         partition_id, num_partitions, smote=True
     )
 
-    num_local_round = 2
+    num_local_round = 3
 
     return XGBFlowerClient(
         train_dmatrix,
@@ -112,10 +126,5 @@ def xgb_client_fn(context: Context):
         num_train,
         num_val,
         num_local_round,
-        selected_space
-        | {
-            "objective": "binary:logistic",
-            "tree_method": "hist",
-            "eval_metric": "auc",
-        },
+        booster_params_from_hp,
     )

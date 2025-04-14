@@ -5,6 +5,7 @@ from sklearn.metrics import accuracy_score
 from xgboost import XGBClassifier
 
 from fed_xai.data_loaders.loader import load_data_with_smote
+from fed_xai.explainers.rulecosi_explainer import rulecosi_explainer
 
 
 def objective_train_xgboost(
@@ -69,7 +70,7 @@ def main() -> None:
     # plot_importance(bst)
     # plt.show()
 
-    # rulecosi_explainer(clf)
+    rulecosi_explainer(clf)
 
 
 if __name__ == "__main__":
