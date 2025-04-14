@@ -2,9 +2,9 @@ from typing import Any
 
 import xgboost as xgb
 from flwr.client import Client
-from flwr.common import Code, EvaluateIns, EvaluateRes, FitIns, FitRes, Parameters, Status
+from flwr.common import Code, EvaluateIns, EvaluateRes, FitIns, FitRes, Parameters, Scalar, Status
 from flwr.common.context import Context
-from sklearn.metrics import accuracy_score  # noqa: F401
+from sklearn.metrics import accuracy_score, roc_auc_score  # noqa: F401
 
 from fed_xai.data_loaders.loader import load_data_for_xgb
 from fed_xai.helpers.accuracy_score_with_threshold import accuracy_score_with_threshold
@@ -20,6 +20,7 @@ booster_params_from_hp = selected_space | {
 class XGBFlowerClient(Client):
     def __init__(
         self,
+        client_id: int,
         train_dmatrix: xgb.DMatrix,
         valid_dmatrix: xgb.DMatrix,
         num_train: int,
@@ -27,6 +28,7 @@ class XGBFlowerClient(Client):
         num_local_round: int,
         params: dict[str, Any],
     ) -> None:
+        self.client_id = client_id
         self.train_dmatrix = train_dmatrix
         self.valid_dmatrix = valid_dmatrix
         self.num_train = num_train
@@ -97,6 +99,8 @@ class XGBFlowerClient(Client):
         )
         auc = round(float(eval_results.split("\t")[1].split(":")[1]), 4)
 
+        global_eval_res = global_eval(self.client_id, bst)
+
         return EvaluateRes(
             status=Status(
                 code=Code.OK,
@@ -104,7 +108,7 @@ class XGBFlowerClient(Client):
             ),
             loss=0.0,
             num_examples=self.num_val,
-            metrics={"acc": acc, "auc": auc},
+            metrics={"acc": acc, "auc": auc} | global_eval_res,
         )
 
 
@@ -118,9 +122,10 @@ def xgb_client_fn(context: Context) -> XGBFlowerClient:
         partition_id, num_partitions, smote=True
     )
 
-    num_local_round = 3
+    num_local_round = 2
 
     return XGBFlowerClient(
+        partition_id,
         train_dmatrix,
         valid_dmatrix,
         num_train,
@@ -128,3 +133,23 @@ def xgb_client_fn(context: Context) -> XGBFlowerClient:
         num_local_round,
         booster_params_from_hp,
     )
+
+
+client_id_for_global_eval = 0
+
+
+# Hacky temp solution for testing purposes. We want to calculate also the global accuracy and auc
+# all data (this wouldn't be possible in real federated learning, but we want to have
+# the comparison to model learned the classical way)
+def global_eval(client_id: int, bst: xgb.Booster) -> dict[str, Scalar]:
+    # Only calculate it on one client
+    if client_id != client_id_for_global_eval:
+        return {}
+
+    train_dmatrix, valid_dmatrix, num_train, num_val = load_data_for_xgb(0, 1)
+    y_pred = bst.predict(valid_dmatrix, validate_features=False)
+    y_true = valid_dmatrix.get_label()
+    return {
+        "acc_global": accuracy_score_with_threshold(y_true, y_pred),
+        "auc_global": roc_auc_score(y_true, y_pred),
+    }
