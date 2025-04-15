@@ -1,13 +1,15 @@
 import xgboost as xgb
 from matplotlib import pyplot as plt
-from sklearn.metrics import accuracy_score  # noqa: F401
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import (
+    accuracy_score,  # noqa: F401
+    roc_auc_score,
+)
 
 from fed_xai.data_loaders.loader import load_data_for_xgb
-from fed_xai.federation.xgboost.xgb_client_app import booster_params_from_hp
+from fed_xai.explainers.combining_rulecosi_explainer import combining_rulecosi_explainer
 from fed_xai.helpers.accuracy_score_with_threshold import accuracy_score_with_threshold
-
-# from fed_xai.xgb_classifier import XGBClassifierExtractor
+from fed_xai.xgboost.booster_to_classifier import booster_to_classifier
+from fed_xai.xgboost.const import booster_params_from_hp
 
 
 def generate_viz(bst: xgb.Booster) -> None:
@@ -51,6 +53,9 @@ def get_stats(bst: xgb.Booster) -> None:
 
     y_pred = bst.predict(valid_dmatrix, validate_features=False)
     y_true = valid_dmatrix.get_label()
+
+    num_trees = len(bst.get_dump())
+    print(f"Number of trees: {num_trees} trees")
     print("----accuracy----")
     print(accuracy_score_with_threshold(y_true, y_pred))
     print("----roc_auc_score----")
@@ -65,12 +70,15 @@ def get_stats(bst: xgb.Booster) -> None:
 
 
 def main() -> None:
-    with open("output/output2.bin", "rb") as file:
+    with open("output/output20.bin", "rb") as file:
         data = file.read()
     bst = xgb.Booster(params=booster_params_from_hp)
     para_b = bytearray(data)
     bst.load_model(para_b)
-    get_stats(bst)
+
+    clf = booster_to_classifier(bst)
+    combining_rulecosi_explainer(clf)
+    # get_stats(bst)
     # generate_viz(bst)
     # generate_rules(bst)
     # shap_explainer(bst)

@@ -5,7 +5,8 @@ from sklearn.metrics import accuracy_score
 from xgboost import XGBClassifier
 
 from fed_xai.data_loaders.loader import load_data_with_smote
-from fed_xai.explainers.rulecosi_explainer import rulecosi_explainer
+from fed_xai.explainers.combining_rulecosi_explainer import combining_rulecosi_explainer
+from fed_xai.xgboost.const import selected_space
 
 
 def objective_train_xgboost(
@@ -47,19 +48,6 @@ def objective_train_xgboost(
     return (clf, accuracy)
 
 
-# The best hyperparameters found by hyperopt
-selected_space = {
-    "colsample_bytree": 0.6430856119765089,
-    "gamma": 11.131971049496897,
-    "learning_rate": 0.13217260031428005,
-    "max_depth": 12,
-    "min_child_weight": 1.1822174379587778,
-    "n_estimators": 62,
-    "reg_alpha": 8.701579711100049,
-    "reg_lambda": 0.3148826988724287,
-}
-
-
 def main() -> None:
     X_train, X_test, y_train, y_test = load_data_with_smote(0, 1)
     clf, acc = objective_train_xgboost(selected_space, X_train, X_test, y_train, y_test)
@@ -70,7 +58,8 @@ def main() -> None:
     # plot_importance(bst)
     # plt.show()
 
-    rulecosi_explainer(clf)
+    # rulecosi_explainer(clf)
+    combining_rulecosi_explainer(clf)
 
 
 if __name__ == "__main__":

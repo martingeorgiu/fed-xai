@@ -34,9 +34,9 @@ def load_data_for_xgb(
 
 
 def load_data_with_smote(
-    partition_id: int, num_clients: int
+    partition_id: int, num_clients: int, withGlobal: bool = True
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
-    X_train, X_test, y_train, y_test = load_data(partition_id, num_clients)
+    X_train, X_test, y_train, y_test = load_data(partition_id, num_clients, withGlobal)
     over = SMOTE(random_state=0)
     # We first split the data into train and test sets
     # and then oversample them, so there are no overlaps
@@ -45,12 +45,16 @@ def load_data_with_smote(
 
 
 def load_data(
-    partition_id: int, num_clients: int
+    partition_id: int, num_clients: int, withGlobal: bool = True
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     print("Loading data...")
-    # Only initialize `FederatedDataset` once
-    global fds
-    if fds is None:
+
+    if withGlobal:
+        # Only initialize `FederatedDataset` once
+        global fds
+
+    # If withGlobal is False, we don't want to use the global variable and reassign every time
+    if fds is None or not withGlobal:
         fds = FederatedDataset(
             dataset="Genius-Society/Pima",
             preprocessor=Merger(merge_config={"main": ("train", "validation", "test")}),

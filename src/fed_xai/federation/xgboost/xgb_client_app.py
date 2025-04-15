@@ -8,13 +8,7 @@ from sklearn.metrics import accuracy_score, roc_auc_score  # noqa: F401
 
 from fed_xai.data_loaders.loader import load_data_for_xgb
 from fed_xai.helpers.accuracy_score_with_threshold import accuracy_score_with_threshold
-from fed_xai.xgboost.train_xgboost import selected_space
-
-booster_params_from_hp = selected_space | {
-    "objective": "binary:logistic",
-    "tree_method": "hist",
-    "eval_metric": "auc",
-}
+from fed_xai.xgboost.const import booster_params_from_hp
 
 
 class XGBFlowerClient(Client):
