@@ -62,22 +62,25 @@ def evaluate_metrics_aggregation(
     return metrics_aggregated
 
 
-def config_func(rnd: int) -> dict[str, str]:
+def config_fn(rnd: int, num_rounds: int) -> dict[str, str]:
     """Return a configuration with global epochs."""
     config = {
         "global_round": str(rnd),
+        "num_rounds": str(num_rounds),
     }
     return config
 
 
-def xgb_server_fn(context: Context) -> ServerAppComponents:
+def xgb_server_fn(context: Context, num_rounds: int) -> ServerAppComponents:
     # Read from config
-    num_rounds = 20
     fraction_fit = 1.0
     fraction_evaluate = 1.0
 
     # Init an empty Parameter
     parameters = Parameters(tensor_type="", tensors=[])
+
+    def extended_config_fn(rnd: int) -> dict[str, str]:
+        return config_fn(rnd, num_rounds)
 
     # Define strategy
     strategy = XGBSaveModelStrategy(
@@ -86,8 +89,8 @@ def xgb_server_fn(context: Context) -> ServerAppComponents:
         fraction_fit=fraction_fit,
         fraction_evaluate=fraction_evaluate,
         evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation,
-        on_evaluate_config_fn=config_func,
-        on_fit_config_fn=config_func,
+        on_evaluate_config_fn=extended_config_fn,
+        on_fit_config_fn=extended_config_fn,
         initial_parameters=parameters,
     )
     config = ServerConfig(num_rounds=num_rounds)

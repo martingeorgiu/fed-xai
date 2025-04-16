@@ -8,6 +8,7 @@ from sklearn.metrics import (
 from fed_xai.data_loaders.loader import load_data_for_xgb
 from fed_xai.explainers.combining_rulecosi_explainer import combining_rulecosi_explainer
 from fed_xai.helpers.accuracy_score_with_threshold import accuracy_score_with_threshold
+from fed_xai.helpers.number_of_trees import get_number_of_trees
 from fed_xai.xgboost.booster_to_classifier import booster_to_classifier
 from fed_xai.xgboost.const import booster_params_from_hp
 
@@ -70,15 +71,17 @@ def get_stats(bst: xgb.Booster) -> None:
 
 
 def main() -> None:
-    with open("output/output20.bin", "rb") as file:
+    with open("output/output2.bin", "rb") as file:
         data = file.read()
     bst = xgb.Booster(params=booster_params_from_hp)
     para_b = bytearray(data)
     bst.load_model(para_b)
 
     clf = booster_to_classifier(bst)
+    no_trees = get_number_of_trees(bst)
+    print(f"no_trees: {no_trees}")
     combining_rulecosi_explainer(clf)
-    # get_stats(bst)
+    get_stats(bst)
     # generate_viz(bst)
     # generate_rules(bst)
     # shap_explainer(bst)
