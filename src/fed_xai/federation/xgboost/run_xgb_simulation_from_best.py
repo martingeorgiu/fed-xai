@@ -12,9 +12,12 @@ from fed_xai.federation.xgboost.xgb_server_app import (
     auc_globals,
     xgb_server_fn,
 )
+from fed_xai.helpers.cleanup_output import cleanup_output, model_path
 
 
 def main() -> None:
+    cleanup_output()
+
     client_app1 = ClientApp(
         xgb_client_fn,
     )
@@ -44,7 +47,7 @@ def main() -> None:
     )
     print(df.to_string(index=False))
 
-    with open(f"output/output{max_auc_round}.bin", "rb") as file:
+    with open(model_path(str(max_auc_round)), "rb") as file:
         data = file.read()
 
     client_app2 = ClientApp(

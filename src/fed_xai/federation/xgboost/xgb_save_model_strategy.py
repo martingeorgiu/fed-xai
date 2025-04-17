@@ -3,11 +3,14 @@ from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import FedXgbBagging
 
 from fed_xai.explainers.combining_rulecosi_explainer import combine_rulesets
+from fed_xai.helpers.cleanup_output import model_path
 from fed_xai.helpers.rulecosi_helpers import (
     bytes_to_ruleset,
     create_empty_rulecosi,
     ruleset_to_bytes,
 )
+
+AggregateRes = tuple[Parameters | None, dict[str, Scalar]]
 
 
 class XGBSaveModelStrategy(FedXgbBagging):
@@ -24,26 +27,31 @@ class XGBSaveModelStrategy(FedXgbBagging):
         server_round: int,
         results: list[tuple[ClientProxy, FitRes]],
         failures: list[tuple[ClientProxy, FitRes] | BaseException],
-    ) -> tuple[Parameters | None, dict[str, Scalar]]:
+    ) -> AggregateRes:
         if self.last_round_rulecosi and server_round == self.num_rounds:
             results_bytes = list(map(lambda x: x[1].parameters.tensors[0], results))
             combined_rule = combine_rules(results_bytes)
-            return (
+            res_rules: AggregateRes = (
                 Parameters(tensor_type="", tensors=[combined_rule]),
                 {},
             )
+            self.save_model("rules", res_rules)
+            return res_rules
 
-        res = super().aggregate_fit(
+        res_xgb = super().aggregate_fit(
             server_round=server_round,
             results=results,
             failures=failures,
         )
+        self.save_model(str(server_round), res_xgb)
+        return res_xgb
+
+    def save_model(self, name: str, res: AggregateRes) -> None:
         if res[0] is not None:
             bytes_model = res[0].tensors[0]
             if self.should_save:
-                with open(f"output/output{server_round}.bin", "wb") as file:
+                with open(model_path(name), "wb") as file:
                     file.write(bytes_model)
-        return res
 
 
 def combine_rules(input: list[bytes]) -> bytes:

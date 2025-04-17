@@ -1,9 +1,7 @@
 import xgboost as xgb
 from matplotlib import pyplot as plt
-from sklearn.metrics import (
-    accuracy_score,  # noqa: F401
-    roc_auc_score,
-)
+from sklearn.metrics import accuracy_score  # noqa: F401
+from sklearn.metrics import roc_auc_score
 
 from fed_xai.data_loaders.loader import load_data_for_xgb
 from fed_xai.explainers.combining_rulecosi_explainer import combining_rulecosi_explainer
@@ -26,27 +24,6 @@ def generate_viz(bst: xgb.Booster) -> None:
     xgb.plot_importance(bst, ax=ax_importance)
     plt.savefig("output/importance.pdf")
     bst.dump_model("output/dump.json")
-
-
-# def generate_rules(bst: xgb.Booster):
-#     print(f"Feature names: {bst.feature_names}")
-#     dump_list = bst.get_dump(dump_format="json")
-#     num_trees = len(dump_list)
-
-#     xgb_classifier = xgb.XGBClassifier()
-#     xgb_classifier._Booster = bst
-#     xgb_classifier.n_estimators = num_trees
-
-#     train_data, num_train, _, __ = load_data(0, num_clients=1)
-
-#     y = train_data.get_label()
-#     X = pd.DataFrame(train_data.get_data().toarray())
-
-#     classifier = RuleCOSIClassifierDebug(
-#         xgb_classifier, column_names=Series(bst.feature_names)
-#     )
-#     classifier.fit(X, y, np.array(bst.feature_names))
-#     classifier.simplified_ruleset_.print_rules(heuristics_digits=4, condition_digits=1)
 
 
 def get_stats(bst: xgb.Booster) -> None:

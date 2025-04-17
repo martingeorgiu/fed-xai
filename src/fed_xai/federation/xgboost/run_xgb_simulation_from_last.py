@@ -13,9 +13,12 @@ from fed_xai.federation.xgboost.xgb_server_app import (
     auc_globals,
     xgb_server_fn,
 )
+from fed_xai.helpers.cleanup_output import cleanup_output
 
 
 def main() -> None:
+    cleanup_output()
+
     client_app = ClientApp(
         xgb_client_fn,
     )
