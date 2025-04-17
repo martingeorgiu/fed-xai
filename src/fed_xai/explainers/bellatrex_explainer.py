@@ -7,8 +7,8 @@ from sklearn.ensemble import RandomForestClassifier
 from fed_xai.data_loaders.loader import load_data
 
 
+# This technique was not used eventually
 def bellatrex_explainer(model: RandomForestClassifier) -> None:
-    # DATA USED for explanation
     X_train, X_test, y_train, y_test = load_data(0, 1)
 
     # Pretrained RF model should be packed as a list of dicts with the function below.

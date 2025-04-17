@@ -6,8 +6,6 @@ from fed_xai.data_loaders.loader import load_data_with_smote
 from fed_xai.xgboost.const import base_params
 from fed_xai.xgboost.train_xgboost import objective_train_xgboost
 
-# tuning here
-# https://www.kaggle.com/code/prashant111/a-guide-on-xgboost-hyperparameters-tuning/notebook#4.-Bayesian-Optimization-with-HYPEROPT-
 space = {
     "max_depth": hp.quniform("max_depth", 3, 18, 1),
     "gamma": hp.uniform("gamma", 0, 20),
@@ -21,6 +19,7 @@ space = {
 } | base_params
 
 
+# Made for researching which hyperparameters are the best
 def main() -> None:
     X_train, X_test, y_train, y_test = load_data_with_smote(0, 1)
 

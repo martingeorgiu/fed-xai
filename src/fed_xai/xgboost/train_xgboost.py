@@ -41,8 +41,6 @@ def objective_train_xgboost(
     )
 
     y_test_pred = clf.predict(X_test)
-    # # cannot use accuracy because of use of synthetic data -> THIS IS NOT CORRECT
-    # # https://www.kaggle.com/code/tanmay111999/diabetes-classification-xgb-lgbm-stack-smote?scriptVersionId=106483964&cellId=66
 
     accuracy = accuracy_score(y_test, y_test_pred)
     X_test_matrix = DMatrix(X_test, label=y_test)

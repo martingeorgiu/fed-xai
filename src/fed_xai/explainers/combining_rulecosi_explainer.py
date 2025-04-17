@@ -35,7 +35,7 @@ def combining_rulecosi_explainer(clf: xgb.XGBClassifier) -> None:
     rc2.fit(X_train2, y_train2)
     # classes_ = unique_labels(y_train2)
 
-    # Nedela rozdil jestli tam data jsou
+    # Using combiner "trained on all data" does not change anything for the combining
     # rc_all = RuleCOSIClassifier(
     #     base_ensemble=clf,
     #     metric="f1",

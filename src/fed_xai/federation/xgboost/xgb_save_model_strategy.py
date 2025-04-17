@@ -3,6 +3,7 @@ from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import FedXgbBagging
 
 from fed_xai.explainers.combining_rulecosi_explainer import combine_rulesets
+from fed_xai.federation.xgboost.const import rules_suffix
 from fed_xai.helpers.cleanup_output import model_path
 from fed_xai.helpers.rulecosi_helpers import (
     bytes_to_ruleset,
@@ -35,7 +36,7 @@ class XGBSaveModelStrategy(FedXgbBagging):
                 Parameters(tensor_type="", tensors=[combined_rule]),
                 {},
             )
-            self.save_model("rules", res_rules)
+            self.save_model(rules_suffix, res_rules)
             return res_rules
 
         res_xgb = super().aggregate_fit(

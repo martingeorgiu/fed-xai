@@ -10,6 +10,7 @@ from sklearn.preprocessing import LabelEncoder
 warnings.filterwarnings("ignore", category=UserWarning, message="The currently tested dataset are")
 
 
+# This dataset was not used eventually
 def transform_lung_dataset_to_dmatrix(dataset: Dataset) -> xgb.DMatrix:
     """Transform dataset to DMatrix format for xgboost."""
     df = dataset.to_pandas()

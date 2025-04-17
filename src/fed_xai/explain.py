@@ -1,6 +1,4 @@
 import xgboost as xgb
-from matplotlib import pyplot as plt
-from sklearn.metrics import accuracy_score  # noqa: F401
 from sklearn.metrics import roc_auc_score
 
 from fed_xai.data_loaders.loader import load_data_for_xgb
@@ -9,21 +7,6 @@ from fed_xai.helpers.accuracy_score_with_threshold import accuracy_score_with_th
 from fed_xai.helpers.number_of_trees import get_number_of_trees
 from fed_xai.xgboost.booster_to_classifier import booster_to_classifier
 from fed_xai.xgboost.const import booster_params_from_hp
-
-
-def generate_viz(bst: xgb.Booster) -> None:
-    fig, ax = plt.subplots(figsize=(30, 30))
-    xgb.plot_tree(bst, ax=ax, tree_idx=1)
-    print(xgb.build_info())
-    print(xgb.config.get_config())
-    # Save tree visualization
-    plt.savefig("output/tree.pdf")
-
-    # Create feature importance plot
-    fig_importance, ax_importance = plt.subplots(figsize=(10, 10))
-    xgb.plot_importance(bst, ax=ax_importance)
-    plt.savefig("output/importance.pdf")
-    bst.dump_model("output/dump.json")
 
 
 def get_stats(bst: xgb.Booster) -> None:

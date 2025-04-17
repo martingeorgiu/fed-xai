@@ -6,6 +6,7 @@ from fed_xai.data_loaders.loader import load_data_with_smote
 from fed_xai.explainers.bellatrex_explainer import bellatrex_explainer
 
 
+# This technique was not used eventually
 def main() -> None:
     X_train, X_test, y_train, y_test = load_data_with_smote(0, 1)
     classifier = RandomForestClassifier(

@@ -1,20 +1,9 @@
-from logging import INFO
 from typing import Any
 
 import pandas as pd
 import xgboost as xgb
 from flwr.client import Client
-from flwr.common import (
-    Code,
-    EvaluateIns,
-    EvaluateRes,
-    FitIns,
-    FitRes,
-    Parameters,
-    Scalar,
-    Status,
-    log,
-)
+from flwr.common import Code, EvaluateIns, EvaluateRes, FitIns, FitRes, Parameters, Scalar, Status
 from flwr.common.context import Context
 from rulecosi import RuleCOSIClassifier, RuleSet
 from sklearn.base import check_array
@@ -24,7 +13,7 @@ from fed_xai.data_loaders.loader import load_data_for_xgb
 from fed_xai.federation.xgboost.const import class_names
 from fed_xai.helpers.accuracy_score_with_threshold import accuracy_score_with_threshold
 from fed_xai.helpers.rulecosi_helpers import bytes_to_ruleset, ruleset_to_bytes
-from fed_xai.xgboost.booster_to_classifier import booster_to_classifier
+from fed_xai.xgboost.booster_to_classifier import booster_to_classifier, load_booster_from_bytes
 from fed_xai.xgboost.const import booster_params_from_hp
 
 
@@ -51,7 +40,6 @@ class XGBFlowerClient(Client):
         global_round = int(ins.config["global_round"])
         num_rounds = int(ins.config["num_rounds"])
         last_round_rulecosi = ins.config["last_round_rulecosi"] == "True"
-        log(INFO, f"Lasssst round {last_round_rulecosi}")
         if last_round_rulecosi and global_round == num_rounds:
             return self._fit_rules(ins)
 
@@ -77,14 +65,8 @@ class XGBFlowerClient(Client):
 
         return bst
 
-    def _load_model(self, params: Parameters) -> xgb.Booster:
-        bst = xgb.Booster(params=self.params)
-        global_model = bytearray(params.tensors[0])
-
-        # Load global model into booster
-        bst.load_model(global_model)
-
-        return bst
+    def _load_model(self, parameters: Parameters) -> xgb.Booster:
+        return load_booster_from_bytes(self.params, parameters.tensors[0])
 
     def _fit_rules(self, ins: FitIns) -> FitRes:
         bst = self._load_model(ins.parameters)

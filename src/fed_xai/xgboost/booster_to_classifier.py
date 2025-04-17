@@ -1,7 +1,7 @@
 import json
+from typing import Any
 
 import xgboost as xgb
-from sklearn.metrics import accuracy_score  # noqa: F401
 
 from fed_xai.xgboost.const import booster_params_from_hp
 
@@ -11,6 +11,13 @@ def booster_to_classifier(bst: xgb.Booster) -> xgb.XGBClassifier:
     xgb_classifier = xgb.XGBClassifier(params=booster_params_from_hp)
     load_model(xgb_classifier, bst)
     return xgb_classifier
+
+
+def load_booster_from_bytes(params: dict[str, Any], model_bytes: bytes) -> xgb.Booster:
+    bst = xgb.Booster(params=params)
+    global_model = bytearray(model_bytes)
+    bst.load_model(global_model)
+    return bst
 
 
 def load_model(self: xgb.XGBClassifier, bst: xgb.Booster) -> None:
@@ -30,6 +37,8 @@ def load_model(self: xgb.XGBClassifier, bst: xgb.Booster) -> None:
     self.get_booster().set_attr(scikit_learn=None)
 
     # The save_config dumps as strings the numbers :(((
+    # This is bug indeed in xgboost, and this file is a workaround parsing the bad json
+    # The dump originally is done in the C++ implementation of xgboost
     config = json.loads(self.get_booster().save_config(), object_hook=convert_strings_to_numbers)
     self._load_model_attributes(config)
 

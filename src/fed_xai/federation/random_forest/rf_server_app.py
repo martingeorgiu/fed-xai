@@ -1,13 +1,21 @@
-from flwr.common import Context, Parameters, Scalar
+from flwr.common import Context, Metrics, Parameters, Scalar
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 
+# This technique was not used eventually
 
-def evaluate_metrics_aggregation(eval_metrics):
+
+def evaluate_metrics_aggregation(eval_metrics: list[tuple[int, Metrics]]) -> Metrics:
     """Return an aggregated metric (AUC) for evaluation."""
     total_num = sum([num for num, _ in eval_metrics])
-    auc_aggregated = sum([metrics["AUC"] * num for num, metrics in eval_metrics]) / total_num
-    metrics_aggregated = {"AUC": auc_aggregated}
+    auc_sum: float = 0.0
+    for num, metrics in eval_metrics:
+        auc_value = metrics.get("AUC")
+        if not isinstance(auc_value, int | float):
+            raise TypeError("Expected numeric AUC in metrics")
+        auc_sum += float(auc_value) * num
+    auc_aggregated: float = auc_sum / total_num
+    metrics_aggregated: Metrics = {"AUC": auc_aggregated}
     return metrics_aggregated
 
 
@@ -19,7 +27,7 @@ def config_func(rnd: int) -> dict[str, Scalar]:
     return config
 
 
-def server_fn(context: Context):
+def server_fn(context: Context) -> ServerAppComponents:
     # Read from config
     num_rounds = context.run_config["num-server-rounds"]
     fraction_fit = context.run_config["fraction-fit"]

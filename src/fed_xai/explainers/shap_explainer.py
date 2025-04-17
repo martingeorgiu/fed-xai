@@ -1,11 +1,11 @@
-import numpy as np
 import shap
 import xgboost
 
-from fed_xai.data_loaders.loader import load_data, load_data_for_xgb
+from fed_xai.data_loaders.loader import load_data
 
 
-def shap_explainer(model: xgboost.Booster):
+# This technique was not used eventually
+def shap_explainer(model: xgboost.Booster) -> None:
     # This way we make sure that there are no labels in the DMatrix
     X_train, X_test, y_train, y_test = load_data(0, 1)
     test = xgboost.DMatrix(X_test)

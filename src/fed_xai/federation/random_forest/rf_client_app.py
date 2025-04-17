@@ -1,10 +1,15 @@
+from typing import Any
+
 import numpy as np
 from flwr.client import Client, ClientApp
 from flwr.common import Code, EvaluateIns, EvaluateRes, FitIns, FitRes, Parameters, Status
 from flwr.common.context import Context
+from pandas import DataFrame
 from sklearn.ensemble import RandomForestClassifier
 
 from fed_xai.data_loaders.loader import load_data
+
+# This technique was not used eventually
 
 
 def get_params(model: RandomForestClassifier) -> list[np.ndarray]:
@@ -29,13 +34,13 @@ def set_params(model: RandomForestClassifier, params: list[np.ndarray]) -> Rando
 class RFFlowerClient(Client):
     def __init__(
         self,
-        train_dmatrix,
-        valid_dmatrix,
-        num_train,
-        num_val,
-        num_local_round,
-        params,
-    ):
+        train_dmatrix: DataFrame,
+        valid_dmatrix: DataFrame,
+        num_train: int,
+        num_val: int,
+        num_local_round: int,
+        params: dict[str, Any],
+    ) -> None:
         self.train_dmatrix = train_dmatrix
         self.valid_dmatrix = valid_dmatrix
         self.num_train = num_train
@@ -85,7 +90,7 @@ class RFFlowerClient(Client):
         )
 
 
-def client_fn(context: Context):
+def client_fn(context: Context) -> RFFlowerClient:
     # Load model and data
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
@@ -98,8 +103,10 @@ def client_fn(context: Context):
     return RFFlowerClient(
         train_dmatrix,
         valid_dmatrix,
-        num_train,
-        num_val,
+        0,
+        0,
+        # num_train,
+        # num_val,
         num_local_round,
         {},
     )
