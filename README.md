@@ -19,6 +19,4 @@ PIMA
 - FEDERATED
   - XGB ACC
 
-pochopit xgboost
-jakto ze lokalni ma lepsi perf nez ten federovany!
-udelat federaci kde to nakonec prozenu rulecosi na klientech
+psat + experimenty

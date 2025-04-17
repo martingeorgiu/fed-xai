@@ -1,10 +1,12 @@
 import numpy as np
-import pandas as pd
 import xgboost as xgb
 from rulecosi import Rule, RuleCOSIClassifier, RuleSet
+from sklearn.base import check_array
 from sklearn.metrics import classification_report
 
 from fed_xai.data_loaders.loader import load_data
+from fed_xai.federation.xgboost.const import class_names
+from fed_xai.helpers.rulecosi_helpers import create_empty_rulecosi
 
 
 def combining_rulecosi_explainer(clf: xgb.XGBClassifier) -> None:
@@ -16,18 +18,19 @@ def combining_rulecosi_explainer(clf: xgb.XGBClassifier) -> None:
         base_ensemble=clf,
         metric="f1",
         random_state=0,
-        column_names=X_train1.columns,
+        column_names=class_names,
     )
     rc1.fit(X_train1, y_train1)
 
     X_train2, X_test2, y_train2, y_test2 = load_data(1, 2, withGlobal=False)
+    print(X_train1.columns)
     print(X_train1.head())
     print(X_train2.head())
     rc2 = RuleCOSIClassifier(
         base_ensemble=clf,
         metric="f1",
         random_state=0,
-        column_names=X_train2.columns,
+        column_names=class_names,
     )
     rc2.fit(X_train2, y_train2)
     # classes_ = unique_labels(y_train2)
@@ -42,27 +45,8 @@ def combining_rulecosi_explainer(clf: xgb.XGBClassifier) -> None:
     # )
     # rc_all.fit(X_train_all, y_train_all)
 
-    X_train3 = X_train_all.copy()
-    number_of_rows = len(X_train3.index)
-    X_train3.loc[:, :] = 0
-    print(X_train3.head())
-    # The y data have to have same number of 0 and 1 and then we are golden!!!!!
-    y_train3 = pd.Series([1 if i % 2 == 0 else 0 for i in range(number_of_rows)])
-    # y_train3 = pd.Series([1 if i % 100 != 0 else 0 for i in range(number_of_rows)])
+    rc_combiner = create_empty_rulecosi()
 
-    rc_combiner = RuleCOSIClassifier(
-        base_ensemble=None,
-        metric="f1",
-        # conf_threshold=0.0,
-        # c=0.0,
-        sort_by_class=None,
-        random_state=0,
-        column_names=X_train3.columns,
-    )
-    rc_combiner.fit(X_train3, y_train3)
-    # rc_combiner.classes_ = classes_
-    # print("== Classes ==")
-    # print(rc_combiner.classes_)
     rules1 = rc1.simplified_ruleset_
     rules2 = rc2.simplified_ruleset_
     print("== Simplified rules1 ==")
@@ -73,14 +57,19 @@ def combining_rulecosi_explainer(clf: xgb.XGBClassifier) -> None:
     # final_set1 = combine_rulesets(rc_all, rules1, rules2)
     # final_set1.print_rules()
     print("== Simplified rules using no data ==")
-    final_set2 = combine_rulesets(rc_combiner, rules1, rules2)
+    final_set2 = combine_rulesets(rc_combiner, rules1, rules1)
+    # pickle.dump(final_set2, open("final_set2.pkl", "wb"))
     final_set2.print_rules()
 
     # y_pred_rc_all = rc_all.predict(X_test_all)
     # print("====== rc_all Classification performance of XGBoost ======")
     # print(classification_report(y_test_all, y_pred_rc_all, digits=4))
 
-    y_pred_rc_combiner = rc_combiner.predict(X_test_all)
+    # X_test_all[0]
+    X_test_all = check_array(X_test_all)
+
+    # y_pred_rc_combiner = final_set2.predict()
+    y_pred_rc_combiner = final_set2.predict(X_test_all)
     print("====== RC Combiner Classification performance of XGBoost ======")
     print(classification_report(y_test_all, y_pred_rc_combiner, digits=4))
 

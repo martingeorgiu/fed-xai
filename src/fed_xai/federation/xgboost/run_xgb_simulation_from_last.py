@@ -20,7 +20,7 @@ def main() -> None:
         xgb_client_fn,
     )
     server_app = ServerApp(
-        server_fn=lambda ctx: xgb_server_fn(ctx, num_rounds),
+        server_fn=lambda ctx: xgb_server_fn(ctx, num_rounds, last_round_rulecosi=True),
     )
 
     run_simulation(
@@ -31,20 +31,22 @@ def main() -> None:
 
     print("\nSimulation finished")
     max_auc = max(auc_globals)
+    rules_index = len(acc_aggregates) - 1
     max_auc_index = auc_globals.index(max_auc)
     # Round numbers are counted from 1
     max_auc_round = max_auc_index + 1
+    rules_round = rules_index + 1
     results = f"{acc_globals[max_auc_index]}\t{acc_aggregates[max_auc_index]}\t{auc_globals[max_auc_index]}\t{auc_aggregates[max_auc_index]}\t{max_auc_round}"  # noqa: E501
     df = pd.DataFrame(
         data={
-            "Accuracy": [acc_globals[max_auc_index]],
-            "Accuracy aggregated": [acc_aggregates[max_auc_index]],
-            "AUC": [auc_globals[max_auc_index]],
-            "AUC aggregated": [auc_aggregates[max_auc_index]],
-            "AUC - Round of max": [max_auc_round],
+            "Accuracy": [acc_globals[max_auc_index], acc_globals[rules_index]],
+            "Accuracy aggregated": [acc_aggregates[max_auc_index], acc_aggregates[rules_index]],
+            "AUC": [auc_globals[max_auc_index], auc_globals[rules_index]],
+            "AUC aggregated": [auc_aggregates[max_auc_index], auc_aggregates[rules_index]],
+            "Round": [max_auc_round, f"RuleCosi ({rules_round})"],
         }
     )
-    print(df)
+    print(df.to_string(index=False))
 
     print("\nResults copied to clipboard")
     pyperclip.copy(results)
