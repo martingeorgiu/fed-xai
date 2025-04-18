@@ -58,7 +58,3 @@ extend-select = ["E501"]
 
 [tool.mypy]
 follow_untyped_imports = true
-
-
-# [[tool.mypy.overrides]]
-# module = ["*.*"]
