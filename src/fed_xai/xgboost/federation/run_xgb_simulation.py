@@ -21,16 +21,12 @@ from fed_xai.xgboost.federation.xgb_server_app import (
 )
 
 
-def create_empty_result_table() -> pd.DataFrame:
-    return pd.DataFrame(
-        columns=["Accuracy", "Accuracy aggregated", "AUC", "AUC aggregated", "Round"]
-    )
-
-
-def run_xgb_simulation(clients: int, server_rounds: int, local_rounds: int) -> pd.DataFrame:
+def run_xgb_simulation(
+    clients: int, server_rounds: int, local_rounds: int, path_prefix: str = ""
+) -> pd.DataFrame:
     unix_time = int(time.time())
 
-    training_name = f"{clients}-{server_rounds}-{local_rounds}-{unix_time}"
+    training_name = f"{path_prefix}{clients}-{server_rounds}-{local_rounds}-{unix_time}"
     os.makedirs(f"output/{training_name}", exist_ok=True)
 
     # cleanup_output()
