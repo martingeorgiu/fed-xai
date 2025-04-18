@@ -177,7 +177,7 @@ def xgb_client_fn(context: Context, local_rounds: int) -> XGBFlowerClient:
     if not isinstance(partition_id, int) or not isinstance(num_partitions, int):
         raise TypeError("partition_id and num_partitions must be integers")
     train_dmatrix, valid_dmatrix, num_train, num_val = load_data_for_xgb(
-        partition_id, num_partitions, smote=True
+        partition_id, num_partitions, smote=True, withGlobal=False
     )
 
     return XGBFlowerClient(
@@ -202,7 +202,7 @@ def global_eval_bst(client_id: int, bst: xgb.Booster) -> dict[str, Scalar]:
     if client_id != client_id_for_global_eval:
         return {}
 
-    train_dmatrix, valid_dmatrix, num_train, num_val = load_data_for_xgb(0, 1)
+    train_dmatrix, valid_dmatrix, num_train, num_val = load_data_for_xgb(0, 1, withGlobal=False)
     y_pred = bst.predict(valid_dmatrix, validate_features=False)
     y_true = valid_dmatrix.get_label()
     return {
@@ -216,7 +216,7 @@ def global_eval_rules(client_id: int, rules: RuleSet) -> dict[str, Scalar]:
     if client_id != client_id_for_global_eval:
         return {}
 
-    train_dmatrix, valid_dmatrix, num_train, num_val = load_data_for_xgb(0, 1)
+    train_dmatrix, valid_dmatrix, num_train, num_val = load_data_for_xgb(0, 1, withGlobal=False)
     X_test = pd.DataFrame(valid_dmatrix.get_data().toarray())
     y_test = valid_dmatrix.get_label()
     X_test = check_array(X_test)

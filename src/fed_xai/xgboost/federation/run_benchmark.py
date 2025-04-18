@@ -10,12 +10,16 @@ def run_benchmark() -> None:
     unix_time = int(time.time())
     benchmark_name = f"benchmark-{unix_time}/"
     param_grid = {
-        # "clients": [2, 3, 4, 5],
-        "clients": [2],
+        "clients": [2, 3, 4, 5],
         "server_rounds": [5, 10],
-        "local_rounds": [2],
-        # "local_rounds": [1, 2, 3, 4],
+        "local_rounds": [1, 2, 3, 4],
     }
+    # Test quick sanity benchmark
+    # param_grid = {
+    #     "clients": [2],
+    #     "server_rounds": [5, 10],
+    #     "local_rounds": [2],
+    # }
     results = pd.DataFrame(
         columns=[
             "Clients",
@@ -29,8 +33,6 @@ def run_benchmark() -> None:
             "Round",
         ]
     )
-
-    # DATA SET je loaded v pameti!!!!
 
     for params in ParameterGrid(param_grid):
         print(

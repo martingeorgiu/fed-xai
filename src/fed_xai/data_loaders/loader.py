@@ -17,11 +17,14 @@ def load_data_for_xgb(
     partition_id: int,
     num_clients: int,
     smote: bool = False,
+    withGlobal: bool = True,
 ) -> tuple[xgb.DMatrix, xgb.DMatrix, int, int]:
     if smote:
-        X_train, X_test, y_train, y_test = load_data_with_smote(partition_id, num_clients)
+        X_train, X_test, y_train, y_test = load_data_with_smote(
+            partition_id, num_clients, withGlobal
+        )
     else:
-        X_train, X_test, y_train, y_test = load_data(partition_id, num_clients)
+        X_train, X_test, y_train, y_test = load_data(partition_id, num_clients, withGlobal)
 
     feature_names = list(X_train)
 
