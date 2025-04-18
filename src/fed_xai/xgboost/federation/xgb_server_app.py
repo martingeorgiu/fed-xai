@@ -1,7 +1,7 @@
 from flwr.common import Context, Metrics, Parameters
 from flwr.server import ServerAppComponents, ServerConfig
 
-from fed_xai.federation.xgboost.xgb_save_model_strategy import XGBSaveModelStrategy
+from fed_xai.xgboost.federation.xgb_save_model_strategy import XGBSaveModelStrategy
 
 acc_aggregates = []
 auc_aggregates = []
@@ -73,7 +73,11 @@ def config_fn(rnd: int, num_rounds: int, last_round_rulecosi: bool) -> dict[str,
 
 
 def xgb_server_fn(
-    context: Context, num_rounds: int, last_round_rulecosi: bool, initial_data: bytes | None = None
+    context: Context,
+    num_rounds: int,
+    last_round_rulecosi: bool,
+    training_name: str | None = None,
+    initial_data: bytes | None = None,
 ) -> ServerAppComponents:
     # Read from config
     fraction_fit = 1.0
@@ -90,6 +94,7 @@ def xgb_server_fn(
         num_rounds=num_rounds,
         last_round_rulecosi=last_round_rulecosi,
         should_save=True,
+        training_name=training_name,
         fraction_fit=fraction_fit,
         fraction_evaluate=fraction_evaluate,
         evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation,

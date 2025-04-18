@@ -1,4 +1,6 @@
 # The best hyperparameters found by hyperopt
+import pandas as pd
+
 selected_space1 = {
     "colsample_bytree": 0.6430856119765089,
     "gamma": 11.131971049496897,
@@ -49,4 +51,18 @@ booster_params_from_hp = (
     | {
         "objective": "binary:logistic",
     }
+)
+
+rules_suffix = "rules"
+class_names = pd.Series(
+    [
+        "Pregnancies",
+        "Glucose",
+        "BloodPressure",
+        "SkinThickness",
+        "Insulin",
+        "BMI",
+        "DiabetesPedigreeFunction",
+        "Age",
+    ]
 )

@@ -4,8 +4,8 @@ from sklearn.metrics import roc_auc_score
 from fed_xai.data_loaders.loader import load_data_for_xgb
 from fed_xai.explainers.combining_rulecosi_explainer import combining_rulecosi_explainer
 from fed_xai.helpers.accuracy_score_with_threshold import accuracy_score_with_threshold
+from fed_xai.helpers.booster_to_classifier import booster_to_classifier
 from fed_xai.helpers.number_of_trees import get_number_of_trees
-from fed_xai.xgboost.booster_to_classifier import booster_to_classifier
 from fed_xai.xgboost.const import booster_params_from_hp
 
 

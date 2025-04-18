@@ -4,7 +4,7 @@ from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 
 from fed_xai.data_loaders.loader import load_data_with_smote
 from fed_xai.xgboost.const import base_params
-from fed_xai.xgboost.train_xgboost import objective_train_xgboost
+from fed_xai.xgboost.standard.train_xgboost import objective_train_xgboost
 
 space = {
     "max_depth": hp.quniform("max_depth", 3, 18, 1),

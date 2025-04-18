@@ -4,7 +4,7 @@ from typing import cast
 import pandas as pd
 from rulecosi import RuleCOSIClassifier, RuleSet
 
-from fed_xai.federation.xgboost.const import class_names
+from fed_xai.xgboost.const import class_names
 
 
 def create_empty_data() -> tuple[pd.DataFrame, pd.Series]:

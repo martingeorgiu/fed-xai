@@ -5,8 +5,8 @@ from sklearn.base import check_array
 from sklearn.metrics import classification_report
 
 from fed_xai.data_loaders.loader import load_data
-from fed_xai.federation.xgboost.const import class_names
 from fed_xai.helpers.rulecosi_helpers import create_empty_rulecosi
+from fed_xai.xgboost.const import class_names
 
 
 def combining_rulecosi_explainer(clf: xgb.XGBClassifier) -> None:

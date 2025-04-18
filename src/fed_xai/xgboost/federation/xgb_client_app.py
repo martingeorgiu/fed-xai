@@ -10,11 +10,10 @@ from sklearn.base import check_array
 from sklearn.metrics import accuracy_score, roc_auc_score  # noqa: F401
 
 from fed_xai.data_loaders.loader import load_data_for_xgb
-from fed_xai.federation.xgboost.const import class_names
 from fed_xai.helpers.accuracy_score_with_threshold import accuracy_score_with_threshold
+from fed_xai.helpers.booster_to_classifier import booster_to_classifier, load_booster_from_bytes
 from fed_xai.helpers.rulecosi_helpers import bytes_to_ruleset, ruleset_to_bytes
-from fed_xai.xgboost.booster_to_classifier import booster_to_classifier, load_booster_from_bytes
-from fed_xai.xgboost.const import booster_params_from_hp
+from fed_xai.xgboost.const import booster_params_from_hp, class_names
 
 
 class XGBFlowerClient(Client):
@@ -171,7 +170,7 @@ class XGBFlowerClient(Client):
         )
 
 
-def xgb_client_fn(context: Context) -> XGBFlowerClient:
+def xgb_client_fn(context: Context, local_rounds: int) -> XGBFlowerClient:
     # Load model and data
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
@@ -181,15 +180,13 @@ def xgb_client_fn(context: Context) -> XGBFlowerClient:
         partition_id, num_partitions, smote=True
     )
 
-    num_local_round = 2
-
     return XGBFlowerClient(
         partition_id,
         train_dmatrix,
         valid_dmatrix,
         num_train,
         num_val,
-        num_local_round,
+        local_rounds,
         booster_params_from_hp,
     )
 
