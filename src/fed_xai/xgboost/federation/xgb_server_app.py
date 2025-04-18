@@ -1,16 +1,13 @@
+import pandas as pd
 from flwr.common import Context, Metrics, Parameters
 from flwr.server import ServerAppComponents, ServerConfig
 
 from fed_xai.xgboost.federation.xgb_save_model_strategy import XGBSaveModelStrategy
 
-acc_aggregates = []
-auc_aggregates = []
-acc_globals = []
-auc_globals = []
-
 
 def evaluate_metrics_aggregation(
     eval_metrics: list[tuple[int, Metrics]],
+    results: pd.DataFrame,
 ) -> Metrics:
     """Return an aggregated metric (AUC) for evaluation."""
     total_num = sum([num for num, _ in eval_metrics])
@@ -42,16 +39,7 @@ def evaluate_metrics_aggregation(
     acc_global = round(acc_global, 4)
     auc_global = round(auc_global, 4)
 
-    # Hacky, but works
-    global acc_aggregates
-    global auc_aggregates
-    global acc_globals
-    global auc_globals
-
-    acc_aggregates.append(acc_aggregated)
-    auc_aggregates.append(auc_aggregated)
-    acc_globals.append(acc_global)
-    auc_globals.append(auc_global)
+    results.loc[len(results)] = [acc_global, acc_aggregated, auc_global, auc_aggregated]
 
     metrics_aggregated: Metrics = {
         "acc_aggregated": acc_aggregated,
@@ -74,6 +62,7 @@ def config_fn(rnd: int, num_rounds: int, last_round_rulecosi: bool) -> dict[str,
 
 def xgb_server_fn(
     context: Context,
+    results: pd.DataFrame,
     num_rounds: int,
     last_round_rulecosi: bool,
     training_name: str | None = None,
@@ -97,7 +86,7 @@ def xgb_server_fn(
         training_name=training_name,
         fraction_fit=fraction_fit,
         fraction_evaluate=fraction_evaluate,
-        evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation,
+        evaluate_metrics_aggregation_fn=lambda x: evaluate_metrics_aggregation(x, results),
         on_evaluate_config_fn=extended_config_fn,
         on_fit_config_fn=extended_config_fn,
         initial_parameters=parameters,
