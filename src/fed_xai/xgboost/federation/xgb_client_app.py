@@ -26,6 +26,7 @@ class XGBFlowerClient(Client):
         num_val: int,
         num_local_round: int,
         params: dict[str, Any],
+        random_state: int | None,
     ) -> None:
         self.client_id = client_id
         self.train_dmatrix = train_dmatrix
@@ -34,6 +35,7 @@ class XGBFlowerClient(Client):
         self.num_val = num_val
         self.num_local_round = num_local_round
         self.params = params
+        self.random_state = random_state
 
     def fit(self, ins: FitIns) -> FitRes:
         global_round = int(ins.config["global_round"])
@@ -130,7 +132,7 @@ class XGBFlowerClient(Client):
         acc = accuracy_score_with_threshold(y_test, y_pred)
         auc = roc_auc_score(y_test, y_pred)
 
-        global_eval_res = global_eval_rules(self.client_id, rules)
+        global_eval_res = global_eval_rules(self.client_id, rules, self.random_state)
 
         return EvaluateRes(
             status=Status(
@@ -157,7 +159,7 @@ class XGBFlowerClient(Client):
         )
         auc = round(float(eval_results.split("\t")[1].split(":")[1]), 4)
 
-        global_eval_res = global_eval_bst(self.client_id, bst)
+        global_eval_res = global_eval_bst(self.client_id, bst, self.random_state)
 
         return EvaluateRes(
             status=Status(
@@ -170,14 +172,18 @@ class XGBFlowerClient(Client):
         )
 
 
-def xgb_client_fn(context: Context, local_rounds: int) -> XGBFlowerClient:
+def xgb_client_fn(context: Context, local_rounds: int, random_state: int | None) -> XGBFlowerClient:
     # Load model and data
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
     if not isinstance(partition_id, int) or not isinstance(num_partitions, int):
         raise TypeError("partition_id and num_partitions must be integers")
     train_dmatrix, valid_dmatrix, num_train, num_val = load_data_for_xgb(
-        partition_id, num_partitions, smote=True, withGlobal=False
+        partition_id,
+        num_partitions,
+        smote=True,
+        withGlobal=True,
+        random_state=random_state,
     )
 
     return XGBFlowerClient(
@@ -188,6 +194,7 @@ def xgb_client_fn(context: Context, local_rounds: int) -> XGBFlowerClient:
         num_val,
         local_rounds,
         booster_params_from_hp,
+        random_state,
     )
 
 
@@ -197,12 +204,16 @@ client_id_for_global_eval = 0
 # Hacky temp solution for testing purposes. We want to calculate also the global accuracy and auc
 # all data (this wouldn't be possible in real federated learning, but we want to have
 # the comparison to model learned the classical way)
-def global_eval_bst(client_id: int, bst: xgb.Booster) -> dict[str, Scalar]:
+def global_eval_bst(
+    client_id: int, bst: xgb.Booster, random_state: int | None
+) -> dict[str, Scalar]:
     # Only calculate it on one client
     if client_id != client_id_for_global_eval:
         return {}
 
-    train_dmatrix, valid_dmatrix, num_train, num_val = load_data_for_xgb(0, 1, withGlobal=False)
+    train_dmatrix, valid_dmatrix, num_train, num_val = load_data_for_xgb(
+        0, 1, withGlobal=True, random_state=random_state
+    )
     y_pred = bst.predict(valid_dmatrix, validate_features=False)
     y_true = valid_dmatrix.get_label()
     return {
@@ -211,12 +222,16 @@ def global_eval_bst(client_id: int, bst: xgb.Booster) -> dict[str, Scalar]:
     }
 
 
-def global_eval_rules(client_id: int, rules: RuleSet) -> dict[str, Scalar]:
+def global_eval_rules(
+    client_id: int, rules: RuleSet, random_state: int | None
+) -> dict[str, Scalar]:
     # Only calculate it on one client
     if client_id != client_id_for_global_eval:
         return {}
 
-    train_dmatrix, valid_dmatrix, num_train, num_val = load_data_for_xgb(0, 1, withGlobal=False)
+    train_dmatrix, valid_dmatrix, num_train, num_val = load_data_for_xgb(
+        0, 1, withGlobal=True, random_state=random_state
+    )
     X_test = pd.DataFrame(valid_dmatrix.get_data().toarray())
     y_test = valid_dmatrix.get_label()
     X_test = check_array(X_test)

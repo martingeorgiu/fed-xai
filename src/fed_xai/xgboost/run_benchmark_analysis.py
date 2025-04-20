@@ -1,5 +1,3 @@
-from itertools import product
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -8,28 +6,65 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 
 
+def plot_heatmaps(df: pd.DataFrame) -> None:
+    """
+    Plots heatmaps of ACC Aggregated and AUC Aggregated for Server rounds = 5,
+    comparing XGBoost vs XGBoost + RuleCOSI across Clients and Local rounds.
+    """
+    # Filter to server rounds = 5
+    df5 = df[df["Server rounds"] == 5]
+
+    # Sorted unique values for consistent axis ordering
+    clients_vals = sorted(df5["Clients"].unique())
+    local_vals = sorted(df5["Local rounds"].unique())
+
+    metrics = [("ACC Aggregated", "Aggregated Accuracy"), ("AUC Aggregated", "Aggregated AUC")]
+
+    for metric_col, metric_name in metrics:
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+        for ax, rule, title in zip(
+            axes, [False, True], ["XGBoost", "XGBoost + RuleCOSI"], strict=True
+        ):
+            df_rule = df5[df5["RuleCOSI"] == rule]
+            # Pivot to Clients x Local rounds
+            pivot = df_rule.pivot_table(
+                index="Clients", columns="Local rounds", values=metric_col, aggfunc="mean"
+            ).reindex(index=clients_vals, columns=local_vals)
+
+            # Plot heatmap
+            im = ax.imshow(pivot.values, aspect="auto", origin="lower")
+            ax.set_xticks(range(len(local_vals)))
+            ax.set_xticklabels(local_vals)
+            ax.set_yticks(range(len(clients_vals)))
+            ax.set_yticklabels(clients_vals)
+            ax.set_xlabel("Local rounds")
+            ax.set_ylabel("Clients")
+            ax.set_title(f"{title}\n{metric_name}")
+            fig.colorbar(im, ax=ax, orientation="vertical", label=metric_name)
+
+        fig.suptitle(f"Heatmaps of {metric_name} (Server rounds = 5)")
+        plt.tight_layout(rect=(0, 0.03, 1, 0.95))
+        plt.show()
+
+
 # ---- Main analysis pipeline ----
 def run_benchmark_analysis(df: pd.DataFrame) -> None:
-    # Ensure the boolean flag exists
-    if "RuleCOSI" not in df.columns:
-        df = add_rulecosi_flag(df)
-
-    # ---- 1. Descriptive summaries ----
+    # ---- Descriptive summaries ----
     summary = (
         df.groupby(["Clients", "RuleCOSI"])
         .agg(
-            acc_mean=("Accuracy aggregated", "mean"),
-            acc_std=("Accuracy aggregated", "std"),
-            auc_mean=("AUC aggregated", "mean"),
-            auc_std=("AUC aggregated", "std"),
+            acc_mean=("ACC Aggregated", "mean"),
+            acc_std=("ACC Aggregated", "std"),
+            auc_mean=("AUC Aggregated", "mean"),
+            auc_std=("AUC Aggregated", "std"),
         )
         .reset_index()
     )
     print("Summary statistics by Clients and RuleCOSI:")
     print(summary)
 
-    # ---- 2. Boxplots by RuleCOSI ----
-    metrics = ["Accuracy aggregated", "AUC aggregated"]
+    # ---- Boxplots by RuleCOSI ----
+    metrics = ["ACC Aggregated", "AUC Aggregated"]
     for m in metrics:
         plt.figure()
         data_true = df[df["RuleCOSI"]][m]
@@ -43,73 +78,58 @@ def run_benchmark_analysis(df: pd.DataFrame) -> None:
         plt.tight_layout()
         plt.show()
 
-    # ---- 3. Line plots vs Server rounds ----
-    clients_vals = sorted(df["Clients"].unique())
-    local_vals = sorted(df["Local rounds"].unique())
-    for C, L in product(clients_vals, local_vals):
-        sub = df[(df["Clients"] == C) & (df["Local rounds"] == L)]
-        if sub.empty:
-            continue
-        plt.figure()
-        for flag in (False, True):
-            grp = sub[sub["RuleCOSI"]] if flag else sub[~sub["RuleCOSI"]]
-            label = "XGBoost + RuleCOSI" if flag else "XGBoost"
-            plt.plot(grp["Server rounds"], grp["Accuracy aggregated"], marker="o", label=label)
-        plt.title(f"Clients={C}, Local={L}: Accuracy vs Server rounds")
-        plt.xlabel("Server rounds")
-        plt.ylabel("Accuracy aggregated")
-        plt.legend()
-        plt.tight_layout()
-        plt.show()
+    # clients 2 acc server rounds 5
 
-    # ---- 4. Heatmaps of aggregated Accuracy ----
-    for C in clients_vals:
-        sub = df[df["Clients"] == C]
-        if sub.empty:
-            continue
-        for flag in (False, True):
-            sel = sub[sub["RuleCOSI"]] if flag else sub[~sub["RuleCOSI"]]
-            label = "XGBoost + RuleCOSI" if flag else "XGBoost"
-            pivot = sel.pivot(
-                index="Local rounds", columns="Server rounds", values="Accuracy aggregated"
-            )
-            plt.figure()
-            plt.imshow(pivot, aspect="auto", origin="lower")
-            plt.colorbar(label="Accuracy aggregated")
-            plt.title(f"Clients={C}, Method={label}: Accuracy heatmap")
-            plt.xlabel("Server rounds")
-            plt.ylabel("Local rounds")
-            plt.xticks(ticks=np.arange(len(pivot.columns)), labels=pivot.columns)
-            plt.yticks(ticks=np.arange(len(pivot.index)), labels=pivot.index)
-            plt.tight_layout()
-            plt.show()
+    plot_heatmaps(df)
+    # ---- Heatmaps of Aggregated Accuracy ----
+    # clients_vals = sorted(df["Clients"].unique())
+    # for C in clients_vals:
+    #     sub = df[df["Clients"] == C]
+    #     if sub.empty:
+    #         continue
+    #     for flag in (False, True):
+    #         sel = sub[sub["RuleCOSI"]] if flag else sub[~sub["RuleCOSI"]]
+    #         label = "XGBoost + RuleCOSI" if flag else "XGBoost"
+    #         pivot = sel.pivot(
+    #             index="Local rounds", columns="Server rounds", values="ACC Aggregated"
+    #         )
+    #         plt.figure()
+    #         plt.imshow(pivot, aspect="auto", origin="lower")
+    #         plt.colorbar(label="ACC Aggregated")
+    #         plt.title(f"Clients={C}, Method={label}: Accuracy heatmap")
+    #         plt.xlabel("Server rounds")
+    #         plt.ylabel("Local rounds")
+    #         plt.xticks(ticks=np.arange(len(pivot.columns)), labels=pivot.columns)
+    #         plt.yticks(ticks=np.arange(len(pivot.index)), labels=pivot.index)
+    #         plt.tight_layout()
+    #         plt.show()
 
     # ---- 5. Statistical tests ----
     paired = df.pivot_table(
         index=["Clients", "Server rounds", "Local rounds"],
         columns="RuleCOSI",
-        values="Accuracy aggregated",
+        values="ACC Aggregated",
     ).dropna()
     stat, p = wilcoxon(paired[False], paired[True])
-    print(f"Wilcoxon test (Accuracy aggregated) stat={stat:.3f}, p={p:.3e}")
+    print(f"Wilcoxon test (ACC Aggregated) stat={stat:.3f}, p={p:.3e}")
 
-    groups = [grp["Accuracy aggregated"].values for _, grp in df.groupby("Server rounds")]
+    groups = [grp["ACC Aggregated"].values for _, grp in df.groupby("Server rounds")]
     f_stat, f_p = f_oneway(*groups)
     print(f"ANOVA across Server rounds: F={f_stat:.3f}, p={f_p:.3e}")
 
     # ---- 6. Feature importance via Random Forest ----
     X = df[["Clients", "Server rounds", "Local rounds"]].copy()
     X["RuleCOSI"] = df["RuleCOSI"].astype(int)
-    y = df["Accuracy aggregated"]
+    y = df["ACC Aggregated"]
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
     rf = RandomForestRegressor(n_estimators=100, random_state=42)
     rf.fit(X_train, y_train)
     importances = rf.feature_importances_
     feat_imp = pd.Series(importances, index=X.columns).sort_values(ascending=False)
-    print("Feature importances for predicting Accuracy aggregated:")
+    print("Feature importances for predicting ACC Aggregated:")
     print(feat_imp)
 
-    # ---- 7. Pareto frontier of Accuracy vs AUC aggregated ----
+    # ---- 7. Pareto frontier of Accuracy vs AUC Aggregated ----
     def pareto_frontier(df: pd.DataFrame, x_col: str, y_col: str) -> pd.DataFrame:
         """
         Compute the Pareto frontier (maximizing both x_col and y_col).
@@ -132,36 +152,18 @@ def run_benchmark_analysis(df: pd.DataFrame) -> None:
                 max_y = current_y
         return pd.DataFrame(frontier_rows)
 
-    pf = pareto_frontier(df, "Accuracy aggregated", "AUC aggregated")
+    pf = pareto_frontier(df, "ACC Aggregated", "AUC Aggregated")
     plt.figure()
-    plt.scatter(df["Accuracy aggregated"], df["AUC aggregated"], alpha=0.3)
-    plt.scatter(pf["Accuracy aggregated"], pf["AUC aggregated"], label="Pareto frontier")
+    plt.scatter(df["ACC Aggregated"], df["AUC Aggregated"], alpha=0.3)
+    plt.scatter(pf["ACC Aggregated"], pf["AUC Aggregated"], label="Pareto frontier")
     plt.title("Pareto frontier (Accuracy vs AUC)")
-    plt.xlabel("Accuracy aggregated")
-    plt.ylabel("AUC aggregated")
+    plt.xlabel("ACC Aggregated")
+    plt.ylabel("AUC Aggregated")
     plt.legend()
     plt.tight_layout()
     plt.show()
 
 
-# ---- Utility: add RuleCOSI flag based on 'Round' column ----
-def add_rulecosi_flag(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Adds a boolean 'RuleCOSI' column to the DataFrame based on the 'Round' column.
-
-    If df['Round'] is the string 'RuleCosi', then RuleCOSI=True; otherwise False.
-
-    Args:
-        df: Original DataFrame containing a 'Round' column.
-
-    Returns:
-        DataFrame with an added 'RuleCOSI' boolean column.
-    """
-    df = df.copy()
-    df["RuleCOSI"] = df["Round"].astype(str).eq("RuleCosi")
-    return df
-
-
 if __name__ == "__main__":
-    df = pd.read_csv("output/benchmark-1744993691/benchmark-results-to-copy.tsv", sep="\t")
+    df = pd.read_csv("output/benchmark-1745085664/benchmark-results-to-copy.tsv", sep="\t")
     run_benchmark_analysis(df)

@@ -7,6 +7,7 @@ from flwr.client import ClientApp
 from flwr.server import ServerApp
 from flwr.simulation import run_simulation
 
+from fed_xai.data_loaders.loader import clear_dataset_cache
 from fed_xai.helpers.booster_to_classifier import load_booster_from_bytes
 from fed_xai.helpers.cleanup_output import model_path
 from fed_xai.helpers.generate_xgb_visualization import generate_xgb_visualization
@@ -17,11 +18,17 @@ from fed_xai.xgboost.federation.xgb_server_app import xgb_server_fn
 
 
 def run_xgb_simulation(
-    clients: int, server_rounds: int, local_rounds: int, path_prefix: str = ""
+    clients: int,
+    server_rounds: int,
+    local_rounds: int,
+    random_state: int | None,
+    path_prefix: str = "",
 ) -> pd.DataFrame:
     unix_time = int(time.time())
 
-    training_name = f"{path_prefix}{clients}-{server_rounds}-{local_rounds}-{unix_time}"
+    training_name = (
+        f"{path_prefix}{clients}-{server_rounds}-{local_rounds}-{unix_time}-{random_state}"
+    )
     os.makedirs(f"output/{training_name}", exist_ok=True)
 
     results_from_training = pd.DataFrame(
@@ -29,7 +36,7 @@ def run_xgb_simulation(
     )
 
     client_app1 = ClientApp(
-        client_fn=lambda ctx: xgb_client_fn(ctx, local_rounds),
+        client_fn=lambda ctx: xgb_client_fn(ctx, local_rounds, random_state),
     )
     server_app1 = ServerApp(
         server_fn=lambda ctx: xgb_server_fn(
@@ -47,7 +54,7 @@ def run_xgb_simulation(
         num_supernodes=clients,
     )
 
-    max_auc_index = int(results_from_training["AUC Global"].idxmax())
+    max_auc_index = int(results_from_training["AUC Aggregated"].idxmax())
 
     max_auc_row = results_from_training.loc[max_auc_index]
     if not isinstance(max_auc_row, pd.Series):
@@ -68,7 +75,7 @@ def run_xgb_simulation(
     )
 
     client_app2 = ClientApp(
-        client_fn=lambda ctx: xgb_client_fn(ctx, local_rounds),
+        client_fn=lambda ctx: xgb_client_fn(ctx, local_rounds, random_state),
     )
     server_app2 = ServerApp(
         server_fn=lambda ctx: xgb_server_fn(
@@ -110,8 +117,10 @@ def run_xgb_simulation(
     # preparation for testing and saving to clipboard
     # df_rules.to_clipboard(index=False, sep="\t", header=None)
 
+    clear_dataset_cache()
+
     return results_processed
 
 
 if __name__ == "__main__":
-    run_xgb_simulation(clients=2, server_rounds=10, local_rounds=2)
+    run_xgb_simulation(clients=2, server_rounds=10, local_rounds=2, random_state=42)
