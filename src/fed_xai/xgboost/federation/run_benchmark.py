@@ -11,20 +11,20 @@ from fed_xai.xgboost.federation.run_xgb_simulation import run_xgb_simulation
 def run_benchmark() -> None:
     unix_time = int(time.time())
     benchmark_name = f"benchmark-{unix_time}/"
-    # param_grid = {
-    #     "clients": [2, 3, 4, 5],
-    #     "server_rounds": [10],
-    #     "local_rounds": [1, 2, 3, 4],
-    # }
-    # single_param_rounds = 8
-    single_param_rounds = 2
+    param_grid = {
+        "clients": [2, 3, 4, 5],
+        "server_rounds": [10],
+        "local_rounds": [1, 2, 3, 4],
+    }
+    single_param_rounds = 8
 
     # Test quick sanity benchmark
-    param_grid = {
-        "clients": [2, 3],
-        "server_rounds": [10],
-        "local_rounds": [2],
-    }
+    # single_param_rounds = 2
+    # param_grid = {
+    #     "clients": [2, 3],
+    #     "server_rounds": [10],
+    #     "local_rounds": [2],
+    # }
     results = get_df()
 
     for params in ParameterGrid(param_grid):
