@@ -1,7 +1,19 @@
 # The best hyperparameters found by hyperopt
 import pandas as pd
 
-selected_space1 = {
+selected_space = {
+    "colsample_bytree": 0.79913320560587,
+    "early_stopping_rounds": 11,
+    "gamma": 10.552380569366205,
+    "learning_rate": 0.1642341446308446,
+    "max_depth": 7,
+    "min_child_weight": 2.2233543333103,
+    "n_estimators": 15,
+    "reg_alpha": 5.639307424170162,
+    "reg_lambda": 0.6644100479124082,
+}
+
+selected_space_old = {
     "colsample_bytree": 0.6430856119765089,
     "gamma": 11.131971049496897,
     "learning_rate": 0.13217260031428005,
@@ -13,31 +25,6 @@ selected_space1 = {
     "early_stopping_rounds": 10,
 }
 
-# New space with calculated early_stopping_rounds
-selected_space2 = {
-    "colsample_bytree": 0.35481936367348016,
-    "early_stopping_rounds": 25,
-    "gamma": 0.62391318284083,
-    "learning_rate": 0.18558469825365817,
-    "max_depth": 6,
-    "min_child_weight": 8.124622468374259,
-    "n_estimators": 192,
-    "reg_alpha": 7.331135046167648,
-    "reg_lambda": 1.8590288099666696,
-}
-
-# small number of estimators
-selected_space3 = {
-    "colsample_bytree": 0.6050922156776783,
-    "early_stopping_rounds": 26,
-    "gamma": 15.3386409963142,
-    "learning_rate": 0.1997795717301235,
-    "max_depth": 5,
-    "min_child_weight": 5.095461516517645,
-    "n_estimators": 10,
-    "reg_alpha": 8.654995022392628,
-    "reg_lambda": 0.7188640910421842,
-}
 
 base_params = {
     "seed": 0,
@@ -46,7 +33,7 @@ base_params = {
 }
 
 booster_params_from_hp = (
-    selected_space1
+    selected_space
     | base_params
     | {
         "objective": "binary:logistic",

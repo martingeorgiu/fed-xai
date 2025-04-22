@@ -155,11 +155,9 @@ def _combine_sliced_rulesets(self: RuleCOSIClassifier, s_ruleset1, s_ruleset2): 
             # print(r1_AUr2_A)
             if heuristics_dict["cov"] == 0:
                 self._bad_combinations.add(frozenset(r1_AUr2_A))
-                print("Ulalalal   1")
                 continue
 
             if frozenset(r1_AUr2_A) in self._bad_combinations:
-                print("Ulalalal   2")
                 continue
 
             self.n_combinations_ += 1  # count the actual
@@ -199,19 +197,15 @@ def _combine_sliced_rulesets(self: RuleCOSIClassifier, s_ruleset1, s_ruleset2): 
             # print(f"new Rule: {new_rule}")
 
             if new_rule in self._good_combinations:
-                # print("Ulalalal  - good")
                 heuristics_dict = self._good_combinations[new_rule]
                 new_rule.set_heuristics(heuristics_dict)
                 combined_rules.add(new_rule)
             else:
-                # print("Ulalalal  - not good")
                 new_rule.set_heuristics(heuristics_dict)
                 if new_rule.conf > self.conf_threshold and new_rule.cov > self.cov_threshold:
-                    # print("Ulalalal  - not good 1")
                     combined_rules.add(new_rule)
                     self._good_combinations[new_rule] = heuristics_dict
                 else:
-                    # print("Ulalalal  - not good 2")
                     self._bad_combinations.add(frozenset(r1_AUr2_A))
 
     return combined_rules

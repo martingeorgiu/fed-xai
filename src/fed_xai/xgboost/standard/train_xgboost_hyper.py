@@ -2,7 +2,7 @@ from typing import Any
 
 from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 
-from fed_xai.data_loaders.loader import load_data_with_smote
+from fed_xai.data_loaders.loader import fds_one, load_data_with_smote
 from fed_xai.xgboost.const import base_params
 from fed_xai.xgboost.standard.train_xgboost import objective_train_xgboost
 
@@ -14,16 +14,23 @@ space = {
     "reg_lambda": hp.uniform("reg_lambda", 0, 2),
     "colsample_bytree": hp.uniform("colsample_bytree", 0, 1),
     "min_child_weight": hp.uniform("min_child_weight", 0, 10),
-    "n_estimators": hp.quniform("n_estimators", 5, 20, 1),
-    "early_stopping_rounds": hp.quniform("early_stopping_rounds", 1, 30, 1),
+    "n_estimators": hp.quniform("n_estimators", 5, 80, 1),
+    "early_stopping_rounds": hp.quniform("early_stopping_rounds", 10, 20, 1),
+    "random_state": hp.randint("random_state", 0, 10000),
 } | base_params
 
 
 # Made for researching which hyperparameters are the best
 def main() -> None:
-    X_train, X_test, y_train, y_test = load_data_with_smote(0, 1)
-
     def objective(space: dict[str, Any]) -> dict[str, Any]:
+        random_state = int(space["random_state"])
+
+        global fds_one
+        if fds_one is not None and fds_one._dataset is not None:
+            # Shuffle the dataset to ensure randomness according to the random_state
+            fds_one._dataset = fds_one._dataset.shuffle(seed=random_state)
+
+        X_train, X_test, y_train, y_test = load_data_with_smote(0, 1, random_state=random_state)
         clf, accuracy, auc = objective_train_xgboost(space, X_train, X_test, y_train, y_test)
         return {"loss": -auc, "status": STATUS_OK}
 
