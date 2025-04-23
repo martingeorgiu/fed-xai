@@ -53,4 +53,5 @@ class_names = pd.Series(
         "Age",
     ]
 )
+conf_threshold = 0.5
 rulecosi_confidence_level = 0.10
