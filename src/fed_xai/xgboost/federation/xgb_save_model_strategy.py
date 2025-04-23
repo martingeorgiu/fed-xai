@@ -1,6 +1,7 @@
 from flwr.common import FitRes, Parameters, Scalar
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import FedXgbBagging
+from rulecosi import RuleSet
 
 from fed_xai.explainers.combining_rulecosi_explainer import combine_rulesets
 from fed_xai.helpers.cleanup_output import model_path, save_path
@@ -98,3 +99,21 @@ def combine_rules(input: list[bytes], random_state: int) -> bytes:
             bytes_to_ruleset(i),
         )
     return ruleset_to_bytes(actual_rule)
+
+
+# Not used, but kept for future reference
+def combine_rules2(input: list[bytes], random_state: int) -> bytes:
+    """
+    Combine rules from multiple clients into a single model.
+    """
+    rc_combiner = create_empty_rulecosi(random_state)
+
+    rules = []
+
+    rule_sets = map(bytes_to_ruleset, input)
+    for rule_set in rule_sets:
+        # without the last 0 rule
+        rules.extend(rule_set.rules[:-1])
+    final_ruleset = RuleSet(rules=rules, classes=rc_combiner.classes_)
+    # final_ruleset.prune_condition_map()
+    return ruleset_to_bytes(final_ruleset)
