@@ -53,3 +53,4 @@ class_names = pd.Series(
         "Age",
     ]
 )
+rulecosi_confidence_level = 0.10

@@ -13,7 +13,7 @@ from fed_xai.data_loaders.loader import load_data_for_xgb
 from fed_xai.helpers.accuracy_score_with_threshold import accuracy_score_with_threshold
 from fed_xai.helpers.booster_to_classifier import booster_to_classifier, load_booster_from_bytes
 from fed_xai.helpers.rulecosi_helpers import bytes_to_ruleset, ruleset_to_bytes
-from fed_xai.xgboost.const import booster_params_from_hp, class_names
+from fed_xai.xgboost.const import booster_params_from_hp, class_names, rulecosi_confidence_level
 
 
 class XGBFlowerClient(Client):
@@ -78,7 +78,8 @@ class XGBFlowerClient(Client):
         rc = RuleCOSIClassifier(
             base_ensemble=clf,
             metric="f1",
-            random_state=0,
+            c=rulecosi_confidence_level,
+            random_state=self.random_state,
             column_names=class_names,
         )
 

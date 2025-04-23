@@ -8,6 +8,11 @@ def cleanup_output() -> None:
     os.makedirs("output", exist_ok=True)
 
 
-def model_path(suffix: str, subfolder: str | None = None) -> str:
+def save_path(subfolder: str | None = None) -> str:
     subfolder_path = f"{subfolder}/" if subfolder else ""
-    return f"output/{subfolder_path}output_{suffix}.bin"
+    return f"output/{subfolder_path}"
+
+
+def model_path(suffix: str, subfolder: str | None = None) -> str:
+    pth = save_path(subfolder)
+    return f"{pth}output_{suffix}.bin"

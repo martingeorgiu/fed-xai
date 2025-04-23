@@ -4,7 +4,7 @@ from typing import cast
 import pandas as pd
 from rulecosi import RuleCOSIClassifier, RuleSet
 
-from fed_xai.xgboost.const import class_names
+from fed_xai.xgboost.const import class_names, rulecosi_confidence_level
 
 
 def create_empty_data() -> tuple[pd.DataFrame, pd.Series]:
@@ -19,15 +19,16 @@ def create_empty_data() -> tuple[pd.DataFrame, pd.Series]:
     return X, y
 
 
-def create_empty_rulecosi() -> RuleCOSIClassifier:
+def create_empty_rulecosi(random_state: int = 0) -> RuleCOSIClassifier:
     X, y = create_empty_data()
 
     rc_combiner = RuleCOSIClassifier(
         base_ensemble=None,
         metric="f1",
         sort_by_class=None,
-        random_state=0,
+        random_state=random_state,
         column_names=class_names,
+        c=rulecosi_confidence_level,
     )
     rc_combiner.fit(X, y)
 

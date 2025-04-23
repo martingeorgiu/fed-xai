@@ -65,6 +65,8 @@ def xgb_server_fn(
     results: pd.DataFrame,
     num_rounds: int,
     last_round_rulecosi: bool,
+    number_of_clients: int,
+    random_state: int,
     training_name: str | None = None,
     initial_data: bytes | None = None,
 ) -> ServerAppComponents:
@@ -83,6 +85,7 @@ def xgb_server_fn(
         num_rounds=num_rounds,
         last_round_rulecosi=last_round_rulecosi,
         should_save=True,
+        random_state=random_state,
         training_name=training_name,
         fraction_fit=fraction_fit,
         fraction_evaluate=fraction_evaluate,
@@ -90,6 +93,9 @@ def xgb_server_fn(
         on_evaluate_config_fn=extended_config_fn,
         on_fit_config_fn=extended_config_fn,
         initial_parameters=parameters,
+        min_fit_clients=number_of_clients,
+        min_evaluate_clients=number_of_clients,
+        min_available_clients=number_of_clients,
     )
     config = ServerConfig(num_rounds=num_rounds)
 

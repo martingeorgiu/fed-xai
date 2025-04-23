@@ -11,8 +11,7 @@ from fed_xai.data_loaders.loader import clear_dataset_cache
 from fed_xai.helpers.booster_to_classifier import load_booster_from_bytes
 from fed_xai.helpers.cleanup_output import model_path
 from fed_xai.helpers.generate_xgb_visualization import generate_xgb_visualization
-from fed_xai.helpers.rulecosi_helpers import bytes_to_ruleset
-from fed_xai.xgboost.const import booster_params_from_hp, rules_suffix
+from fed_xai.xgboost.const import booster_params_from_hp
 from fed_xai.xgboost.federation.xgb_client_app import xgb_client_fn
 from fed_xai.xgboost.federation.xgb_server_app import xgb_server_fn
 
@@ -21,7 +20,7 @@ def run_xgb_simulation(
     clients: int,
     server_rounds: int,
     local_rounds: int,
-    random_state: int | None,
+    random_state: int,
     path_prefix: str = "",
 ) -> pd.DataFrame:
     unix_time = int(time.time())
@@ -44,6 +43,8 @@ def run_xgb_simulation(
             results_from_training,
             server_rounds,
             last_round_rulecosi=False,
+            number_of_clients=clients,
+            random_state=random_state,
             training_name=training_name,
         ),
     )
@@ -83,7 +84,9 @@ def run_xgb_simulation(
             results_from_training,
             1,
             last_round_rulecosi=True,
+            number_of_clients=clients,
             training_name=training_name,
+            random_state=random_state,
             initial_data=best_xgb_model,
         ),
     )
@@ -91,7 +94,7 @@ def run_xgb_simulation(
     run_simulation(
         server_app=server_app2,
         client_app=client_app2,
-        num_supernodes=2,
+        num_supernodes=clients,
     )
     # Indexes are counted from 0  but rounds from 1, so the last round is num_rounds
     rulecosi_index = server_rounds
@@ -105,12 +108,6 @@ def run_xgb_simulation(
 
     print(results_processed)
 
-    with open(model_path(rules_suffix, training_name), "rb") as file:
-        best_xgb_model = file.read()
-    ruleset = bytes_to_ruleset(best_xgb_model)
-
-    with open(f"output/{training_name}/ruleset.txt", "w") as file:
-        file.write(str(ruleset))
     with open(f"output/{training_name}/benchmark.txt", "w") as file:
         file.write(results_processed.to_string(index=False))
 
