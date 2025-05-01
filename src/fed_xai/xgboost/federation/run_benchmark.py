@@ -12,11 +12,11 @@ def run_benchmark() -> None:
     unix_time = int(time.time())
     benchmark_name = f"benchmark-{unix_time}/"
     param_grid = {
-        "clients": [2, 3, 4, 5],
-        "server_rounds": [10],
+        "clients": [2, 3, 4],
+        "server_rounds": [8],
         "local_rounds": [1, 2, 3, 4],
     }
-    single_param_rounds = 8
+    single_param_rounds = 16
 
     # Test quick sanity benchmark
     # single_param_rounds = 2
@@ -34,7 +34,7 @@ def run_benchmark() -> None:
         param_results = get_df()
         for _ in range(single_param_rounds):
             # Randomize the seed for each simulation
-            random_state = random.randint(1, 10000)
+            random_state = random.randint(1, 1000000)
             df = run_xgb_simulation(**params, random_state=random_state, path_prefix=benchmark_name)
             df["Clients"] = params["clients"]
             df["Server rounds"] = params["server_rounds"]

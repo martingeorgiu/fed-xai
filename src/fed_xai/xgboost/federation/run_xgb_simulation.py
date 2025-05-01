@@ -120,4 +120,4 @@ def run_xgb_simulation(
 
 
 if __name__ == "__main__":
-    run_xgb_simulation(clients=2, server_rounds=10, local_rounds=2, random_state=42)
+    run_xgb_simulation(clients=3, server_rounds=10, local_rounds=1, random_state=4444)
