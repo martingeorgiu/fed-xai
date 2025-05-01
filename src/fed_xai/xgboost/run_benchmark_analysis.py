@@ -210,7 +210,7 @@ def plot_pareto_frontier(
             color="red",
             label="Pareto Frontier",
         )
-        plt.title(f"Pareto Frontier of {dataset_name}: Accuracy vs ROC AUC")
+        plt.title(f"Pareto Frontier of {dataset_name}")
         plt.xlabel(x_label)
         plt.ylabel(y_label)
         plt.legend()
