@@ -6,7 +6,31 @@ from sklearn.metrics import classification_report
 
 from fed_xai.data_loaders.loader import load_data
 from fed_xai.helpers.rulecosi_helpers import create_empty_rulecosi
-from fed_xai.xgboost.const import class_names
+from fed_xai.xgboost.const import c_value, class_names, cov_threshold
+
+
+def simple_rulecosi_explainer(clf: xgb.XGBClassifier) -> None:
+    X_train_all, X_test_all, y_train_all, y_test_all = load_data(0, 1)
+
+    rc_all = RuleCOSIClassifier(
+        base_ensemble=clf,
+        metric="f1",
+        sort_by_class=None,
+        random_state=0,
+        cov_threshold=cov_threshold,
+        c=c_value,
+        column_names=X_train_all.columns,
+    )
+    rc_all.fit(X_train_all, y_train_all)
+
+    rules = rc_all.simplified_ruleset_
+    rules.print_rules()
+
+    X_test_all = check_array(X_test_all)
+
+    y_pred_rc_combiner = rules.predict(X_test_all)
+    print("====== RC Combiner Classification performance of XGBoost ======")
+    print(classification_report(y_test_all, y_pred_rc_combiner, digits=4))
 
 
 def combining_rulecosi_explainer(clf: xgb.XGBClassifier) -> None:

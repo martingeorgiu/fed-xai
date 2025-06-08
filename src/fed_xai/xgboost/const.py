@@ -53,5 +53,10 @@ class_names = pd.Series(
         "Age",
     ]
 )
-conf_threshold = 0.5
-rulecosi_confidence_level = 0.10
+
+c_value = 0.35
+cov_threshold = 0.005
+
+# Original values for the benchmarks
+og_conf_threshold = 0.5
+og_c_value = 0.10

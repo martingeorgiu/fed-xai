@@ -13,12 +13,7 @@ from fed_xai.data_loaders.loader import load_data_for_xgb
 from fed_xai.helpers.accuracy_score_with_threshold import accuracy_score_with_threshold
 from fed_xai.helpers.booster_to_classifier import booster_to_classifier, load_booster_from_bytes
 from fed_xai.helpers.rulecosi_helpers import bytes_to_ruleset, ruleset_to_bytes
-from fed_xai.xgboost.const import (
-    booster_params_from_hp,
-    class_names,
-    conf_threshold,
-    rulecosi_confidence_level,
-)
+from fed_xai.xgboost.const import booster_params_from_hp, c_value, class_names, cov_threshold
 
 
 class XGBFlowerClient(Client):
@@ -83,8 +78,8 @@ class XGBFlowerClient(Client):
         rc = RuleCOSIClassifier(
             base_ensemble=clf,
             metric="f1",
-            conf_threshold=conf_threshold,
-            c=rulecosi_confidence_level,
+            cov_threshold=cov_threshold,
+            c=c_value,
             random_state=self.random_state,
             column_names=class_names,
         )
@@ -104,12 +99,23 @@ class XGBFlowerClient(Client):
     def _fit_bst(self, ins: FitIns, global_round: int) -> FitRes:
         if global_round == 1:
             # First round local training
-            bst = xgb.train(
-                self.params,
-                self.train_dmatrix,
-                num_boost_round=self.num_local_round,
-                evals=[(self.valid_dmatrix, "validate"), (self.train_dmatrix, "train")],
+            # This was the original approach highlighted in the thesis
+            # bst = xgb.train(
+            #     self.params,
+            #     self.train_dmatrix,
+            #     num_boost_round=self.num_local_round,
+            #     evals=[(self.valid_dmatrix, "validate"), (self.train_dmatrix, "train")],
+            # )
+
+            # Make the first round big, and the remaining will add on top of that
+            clf = xgb.XGBClassifier(
+                objective="binary:logistic", learning_rate=0.01, max_depth=30, n_estimators=180
             )
+            clf.fit(
+                self.train_dmatrix.get_data().toarray(),
+                self.train_dmatrix.get_label(),
+            )
+            bst = clf.get_booster()
         else:
             bst = self._load_model(ins.parameters)
 

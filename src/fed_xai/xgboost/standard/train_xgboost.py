@@ -4,8 +4,8 @@ from pandas import DataFrame, Series
 from sklearn.metrics import accuracy_score, roc_auc_score
 from xgboost import DMatrix, XGBClassifier
 
-from fed_xai.data_loaders.loader import load_data_with_smote
-from fed_xai.explainers.combining_rulecosi_explainer import combining_rulecosi_explainer
+from fed_xai.data_loaders.loader import load_data
+from fed_xai.explainers.combining_rulecosi_explainer import simple_rulecosi_explainer
 from fed_xai.helpers.number_of_trees import get_number_of_trees
 from fed_xai.xgboost.const import booster_params_from_hp
 
@@ -17,18 +17,22 @@ def objective_train_xgboost(
     y_train: Series,
     y_test: Series,
 ) -> tuple[XGBClassifier, float, float]:
+    # clf = XGBClassifier(
+    #     max_depth=int(space["max_depth"]),
+    #     gamma=space["gamma"],
+    #     learning_rate=space["learning_rate"],
+    #     reg_alpha=space["reg_alpha"],
+    #     reg_lambda=space["reg_lambda"],
+    #     colsample_bytree=space["colsample_bytree"],
+    #     min_child_weight=space["min_child_weight"],
+    #     n_estimators=int(space["n_estimators"]),
+    #     tree_method=space["tree_method"],
+    #     eval_metric=space["eval_metric"],
+    #     early_stopping_rounds=int(space["early_stopping_rounds"]),
+    # )
+
     clf = XGBClassifier(
-        max_depth=int(space["max_depth"]),
-        gamma=space["gamma"],
-        learning_rate=space["learning_rate"],
-        reg_alpha=space["reg_alpha"],
-        reg_lambda=space["reg_lambda"],
-        colsample_bytree=space["colsample_bytree"],
-        min_child_weight=space["min_child_weight"],
-        n_estimators=int(space["n_estimators"]),
-        tree_method=space["tree_method"],
-        eval_metric=space["eval_metric"],
-        early_stopping_rounds=int(space["early_stopping_rounds"]),
+        objective="binary:logistic", learning_rate=0.01, max_depth=30, n_estimators=180
     )
 
     evaluation = [(X_train, y_train), (X_test, y_test)]
@@ -54,21 +58,16 @@ def objective_train_xgboost(
 
 
 def main() -> None:
-    X_train, X_test, y_train, y_test = load_data_with_smote(0, 1)
+    # X_train, X_test, y_train, y_test = load_data_with_smote(0, 1)
+    X_train, X_test, y_train, y_test = load_data(0, 1)
     clf, acc, auc = objective_train_xgboost(
         booster_params_from_hp, X_train, X_test, y_train, y_test
     )
     no_trees = get_number_of_trees(clf.get_booster())
     print(f"No trees: {no_trees}")
-    # bst = clf.get_booster()  # noqa: F841
 
-    # shap_explainer(bst)
-
-    # plot_importance(bst)
-    # plt.show()
-
-    # rulecosi_explainer(clf)
-    combining_rulecosi_explainer(clf)
+    simple_rulecosi_explainer(clf)
+    # combining_rulecosi_explainer(clf)
 
 
 if __name__ == "__main__":
